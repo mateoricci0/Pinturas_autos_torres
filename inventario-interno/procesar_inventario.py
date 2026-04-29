@@ -41,7 +41,7 @@ MARCAS = [
     ("Sagola",        ["SAGOLA"]),
     ("Franchi & Kim", ["FRANCHI & KIM", "FRANCHI&KIM", "FRANCHI &KIM", "F&K", "F&k"]),
     ("Vermaat",       ["VERMAAT", "AEROMETAL", "VICTORIA "]),
-    ("3M",            ["3M ", " 3M", "SCOTCH-BRITE", "SCOTCHBRITE", "SCOTT BRITE"]),
+    ("3M",            ["3M ", " 3M ", "SCOTCH-BRITE", "SCOTCHBRITE", "SCOTT BRITE"]),
     ("Indasa",        ["INDASA", "RHYNO"]),
     ("Metabo",        ["METABO"]),
     ("Besa",          ["BESA"]),
