@@ -302,7 +302,7 @@ def leer_inventario(ruta: Path) -> "pd.DataFrame":
         elif "escri" in c:
             col_map[col] = "descripcion"
         elif "costo" in c or "coste" in c:
-            col_map[col] = "_costo"
+            col_map[col] = "precio_costo"
         elif "venta" in c:
             col_map[col] = "precio_venta"
         elif "stock" in c:
@@ -310,7 +310,7 @@ def leer_inventario(ruta: Path) -> "pd.DataFrame":
 
     df = df.rename(columns=col_map)
 
-    cols_keep = [c for c in ["codigo", "descripcion", "precio_venta", "stock"] if c in df.columns]
+    cols_keep = [c for c in ["codigo", "descripcion", "precio_costo", "precio_venta", "stock"] if c in df.columns]
     df = df[cols_keep].copy()
 
     df = df.dropna(subset=["descripcion"])
@@ -319,6 +319,7 @@ def leer_inventario(ruta: Path) -> "pd.DataFrame":
 
     df["codigo"] = df["codigo"].fillna("").astype(str).str.strip()
     df["stock"] = pd.to_numeric(df.get("stock", 0), errors="coerce").fillna(0).astype(int)
+    df["precio_costo"] = pd.to_numeric(df.get("precio_costo", 0), errors="coerce").fillna(0).round(2)
     df["precio_venta"] = pd.to_numeric(df.get("precio_venta", 0), errors="coerce").fillna(0).round(2)
 
     df["marca"] = df["descripcion"].apply(detectar_marca)
@@ -332,8 +333,6 @@ def leer_inventario(ruta: Path) -> "pd.DataFrame":
 
 def generar_html(df: "pd.DataFrame", ruta_xls: str) -> str:
     productos = df.to_dict(orient="records")
-    for p in productos:
-        p.pop("_costo", None)
 
     marcas_base = sorted(df["marca"].unique().tolist())
     tipos_base  = sorted(df["tipo"].unique().tolist())
@@ -408,6 +407,7 @@ def generar_html(df: "pd.DataFrame", ruta_xls: str) -> str:
         "td.codigo{font-family:monospace;font-size:11px;color:var(--dg);white-space:nowrap}\n"
         "td.descripcion{max-width:320px;line-height:1.4}\n"
         "td.precio{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}\n"
+        "td.precio-costo{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;color:#888;font-size:12px}\n"
         "td.stock{text-align:center;font-weight:600}\n"
         ".badge{\n"
         "  display:inline-flex;align-items:center;gap:4px;\n"
@@ -501,8 +501,10 @@ def generar_html(df: "pd.DataFrame", ruta_xls: str) -> str:
         "      <option value=\"descripcion\">Descripción A-Z</option>\n"
         "      <option value=\"stock-asc\">Stock ↑ (menor primero)</option>\n"
         "      <option value=\"stock-desc\">Stock ↓ (mayor primero)</option>\n"
-        "      <option value=\"precio-desc\">Precio ↓</option>\n"
-        "      <option value=\"precio-asc\">Precio ↑</option>\n"
+        "      <option value=\"costo-desc\">P.Costo ↓</option>\n"
+        "      <option value=\"costo-asc\">P.Costo ↑</option>\n"
+        "      <option value=\"precio-desc\">P.Venta ↓</option>\n"
+        "      <option value=\"precio-asc\">P.Venta ↑</option>\n"
         "      <option value=\"marca\">Marca A-Z</option>\n"
         "      <option value=\"editados\">Editados primero</option>\n"
         "    </select>\n"
@@ -522,6 +524,7 @@ def generar_html(df: "pd.DataFrame", ruta_xls: str) -> str:
         "      <th title=\"Haz clic en el badge para editar\">Marca ✏</th>\n"
         "      <th title=\"Haz clic en el badge para editar\">Tipo ✏</th>\n"
         "      <th onclick=\"ordenarPor('stock-asc')\" style=\"cursor:pointer\">Stock ↕</th>\n"
+        "      <th onclick=\"ordenarPor('costo-desc')\" style=\"cursor:pointer;color:#888\" title=\"Precio de costo (uso interno)\">P. Costo ↕</th>\n"
         "      <th onclick=\"ordenarPor('precio-desc')\" style=\"cursor:pointer\">P. Venta ↕</th>\n"
         "    </tr></thead>\n"
         "    <tbody id=\"tabla-body\"></tbody>\n"
@@ -700,6 +703,8 @@ def generar_html(df: "pd.DataFrame", ruta_xls: str) -> str:
         "    switch(ordenActual) {\n"
         "      case 'stock-asc':   return a.stock - b.stock;\n"
         "      case 'stock-desc':  return b.stock - a.stock;\n"
+        "      case 'costo-desc':  return (b.precio_costo||0) - (a.precio_costo||0);\n"
+        "      case 'costo-asc':   return (a.precio_costo||0) - (b.precio_costo||0);\n"
         "      case 'precio-desc': return b.precio_venta - a.precio_venta;\n"
         "      case 'precio-asc':  return a.precio_venta - b.precio_venta;\n"
         "      case 'marca':       return a.marca.localeCompare(b.marca);\n"
@@ -724,6 +729,9 @@ def generar_html(df: "pd.DataFrame", ruta_xls: str) -> str:
         "  if (!lista.length) { body.innerHTML=''; empty.style.display='block'; return; }\n"
         "  empty.style.display = 'none';\n"
         "  body.innerHTML = lista.map(p => {\n"
+        "    const costoStr = (p.precio_costo||0) > 0\n"
+        "      ? (p.precio_costo).toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:2})+' €'\n"
+        "      : '—';\n"
         "    const precioStr = p.precio_venta > 0\n"
         "      ? p.precio_venta.toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:2})+' €'\n"
         "      : '—';\n"
@@ -742,6 +750,7 @@ def generar_html(df: "pd.DataFrame", ruta_xls: str) -> str:
         "      <td>${bMarca}</td>\n"
         "      <td>${bTipo}</td>\n"
         "      <td class=\"stock\"><span class=\"${stockClass(p.stock)}\">${p.stock}</span></td>\n"
+        "      <td class=\"precio-costo\">${costoStr}</td>\n"
         "      <td class=\"precio\">${precioStr}</td>\n"
         "    </tr>`;\n"
         "  }).join('');\n"
