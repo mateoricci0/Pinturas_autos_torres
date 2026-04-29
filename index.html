@@ -18,31 +18,83 @@ html,body{background:var(--offwhite);color:var(--black);font-family:var(--body);
 img{max-width:100%;display:block}
 
 /* NAV */
-nav{background:var(--mg);padding:0 1.25rem;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:99;border-bottom:3px solid var(--black)}
-.logo{font-family:var(--head);font-size:11px;font-weight:900;letter-spacing:-0.01em;color:var(--white);white-space:nowrap}
-.logo b{background:var(--white);color:var(--mg);padding:2px 6px;margin-right:4px}
-.navl{display:flex;gap:1.2rem;list-style:none}
-.navl a{font-size:10px;font-weight:500;color:rgba(255,255,255,0.85);text-decoration:none;text-transform:uppercase;letter-spacing:0.07em}
+nav{background:var(--black);padding:0 1.5rem;height:58px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:99;border-bottom:3px solid var(--mg)}
+.nav-logo-pill{background:var(--white);border-radius:7px;padding:5px 12px;display:flex;align-items:center;line-height:0;box-shadow:0 0 0 1px rgba(255,255,255,0.12)}
+.nav-logo{height:36px;width:auto;display:block}
+.navl{display:flex;gap:1.4rem;list-style:none}
+.navl a{font-size:10px;font-weight:700;color:rgba(255,255,255,0.75);text-decoration:none;text-transform:uppercase;letter-spacing:0.1em;font-family:var(--head);transition:color .15s}
 .navl a:hover{color:var(--white)}
 
 /* HERO */
-.hero{display:grid;grid-template-columns:3fr 2fr;border-bottom:3px solid var(--black)}
-.hero-l{background:var(--white);padding:2.5rem 1.5rem;border-right:3px solid var(--black)}
-.eyebrow{font-family:var(--head);font-size:8px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:var(--dg);margin-bottom:.9rem;display:flex;align-items:center;gap:8px}
-.eyebrow::after{content:'';flex:1;height:1px;background:#ddd}
-.hero-l h1{font-family:var(--head);font-size:clamp(20px,4vw,44px);font-weight:900;line-height:0.95;letter-spacing:-0.03em;color:var(--black);margin-bottom:1rem}
-.accent{color:var(--mg)}
-.hero-l p{font-size:13px;color:#333;line-height:1.7;margin-bottom:1.4rem}
+.hero{
+  position:relative;
+  min-height:min(92vh,780px);
+  background:url('hero-car.jpg') center 38%/cover no-repeat;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-bottom:3px solid var(--mg);
+  overflow:hidden;
+}
+.hero::before{
+  content:'';
+  position:absolute;
+  inset:0;
+  background:linear-gradient(115deg,rgba(13,13,13,0.92) 0%,rgba(181,0,106,0.55) 55%,rgba(13,13,13,0.80) 100%);
+  z-index:1;
+}
+.hero-inner{
+  position:relative;
+  z-index:2;
+  width:100%;
+  max-width:1300px;
+  padding:3rem 2.5rem;
+  display:grid;
+  grid-template-columns:3fr 2fr;
+  grid-template-rows:auto auto;
+  gap:2rem 3rem;
+  align-items:center;
+}
+.hero-logo-wrap{
+  grid-column:1/-1;
+  display:flex;
+  justify-content:center;
+  margin-bottom:.5rem;
+}
+.hero-logo-img{
+  height:140px;
+  width:auto;
+  border-radius:14px;
+  filter:drop-shadow(0 0 40px rgba(181,0,106,0.65)) drop-shadow(0 8px 24px rgba(0,0,0,0.9));
+  transition:filter .3s;
+}
+.hero-logo-img:hover{filter:drop-shadow(0 0 55px rgba(181,0,106,0.85)) drop-shadow(0 8px 24px rgba(0,0,0,0.9))}
+.hero-l{padding:0}
+.eyebrow{font-family:var(--head);font-size:8px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:rgba(255,255,255,0.5);margin-bottom:.9rem;display:flex;align-items:center;gap:8px}
+.eyebrow::after{content:'';flex:1;height:1px;background:rgba(255,255,255,0.18)}
+.hero-l h1{font-family:var(--head);font-size:clamp(22px,4.2vw,52px);font-weight:900;line-height:0.93;letter-spacing:-0.03em;color:var(--white);margin-bottom:1.1rem;text-shadow:0 2px 24px rgba(0,0,0,0.6)}
+.accent{color:var(--mg3)}
+.hero-l p{font-size:13px;color:rgba(255,255,255,0.78);line-height:1.78;margin-bottom:1.6rem;max-width:500px}
 .hero-btns{display:flex;gap:8px;flex-wrap:wrap}
-.btn-mg{display:inline-block;background:var(--mg);color:var(--white);font-family:var(--head);font-size:9px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:11px 18px;border-radius:4px;text-decoration:none;border:none;cursor:pointer}
+.btn-mg{display:inline-block;background:var(--mg);color:var(--white);font-family:var(--head);font-size:9px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:13px 22px;border-radius:5px;text-decoration:none;border:none;cursor:pointer;box-shadow:0 0 22px rgba(181,0,106,0.55)}
 .btn-mg:hover{background:var(--mg2)}
-.btn-out{display:inline-block;background:var(--white);color:var(--black);font-family:var(--head);font-size:9px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:11px 18px;border-radius:4px;border:2px solid var(--black);cursor:pointer}
-.btn-out:hover{background:var(--gray)}
-.hero-r{background:var(--mg);display:flex;flex-direction:column;justify-content:center;padding:2rem 1.25rem;gap:1.2rem}
-.stat{border-bottom:1px solid rgba(255,255,255,0.2);padding-bottom:1.2rem}
-.stat:last-child{border:none;padding:0}
-.stat-n{font-family:var(--head);font-size:clamp(26px,5vw,34px);font-weight:900;color:var(--white);line-height:1}
-.stat-l{font-size:10px;color:rgba(255,255,255,0.7);margin-top:3px;line-height:1.4}
+.btn-out{display:inline-block;background:transparent;color:var(--white);font-family:var(--head);font-size:9px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:13px 22px;border-radius:5px;border:2px solid rgba(255,255,255,0.45);cursor:pointer;text-decoration:none}
+.btn-out:hover{background:rgba(255,255,255,0.1);border-color:var(--white)}
+.hero-r{
+  display:flex;
+  flex-direction:column;
+  background:rgba(13,13,13,0.50);
+  border:1px solid rgba(255,255,255,0.13);
+  border-radius:12px;
+  backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);
+  overflow:hidden;
+  box-shadow:0 8px 40px rgba(0,0,0,0.4);
+}
+.stat{padding:1.4rem 1.8rem;border-bottom:1px solid rgba(255,255,255,0.09)}
+.stat:last-child{border:none}
+.stat-n{font-family:var(--head);font-size:clamp(28px,4vw,38px);font-weight:900;color:var(--white);line-height:1}
+.stat-l{font-size:10px;color:rgba(255,255,255,0.50);margin-top:5px;line-height:1.4}
 
 /* TICKER */
 .ticker{background:var(--black);padding:9px 0;overflow:hidden;border-bottom:3px solid var(--mg)}
@@ -133,27 +185,31 @@ nav{background:var(--mg);padding:0 1.25rem;height:52px;display:flex;align-items:
 .mapa-btn{display:inline-block;background:var(--mg);color:var(--white);font-family:var(--head);font-size:9px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:10px 16px;border-radius:4px;text-decoration:none;white-space:nowrap}
 .mapa-btn:hover{background:var(--mg2)}
 
-footer{background:var(--black);padding:1rem 1.5rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem}
+footer{background:var(--black);padding:1.2rem 1.5rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.75rem;border-top:3px solid var(--mg)}
 footer p{font-family:var(--head);font-size:8px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:rgba(255,255,255,0.4)}
+.footer-logo-pill{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:4px 10px;display:flex;align-items:center;line-height:0}
+.footer-logo{height:28px;width:auto;display:block;opacity:.85}
 
 /* ===================== MOBILE ===================== */
 @media(max-width:640px){
 
-  nav{padding:0 1rem;height:50px}
-  .logo{font-size:10px}
+  nav{padding:0 1rem;height:52px}
+  .nav-logo{height:30px}
+  .nav-logo-pill{padding:4px 9px}
   .navl{gap:.9rem}
   .navl a{font-size:9px}
 
   /* Hero apilado */
-  .hero{grid-template-columns:1fr}
-  .hero-l{border-right:none;border-bottom:3px solid var(--black);padding:2rem 1rem}
-  .hero-l h1{font-size:clamp(26px,8vw,38px);margin-bottom:.9rem}
-  .hero-l p{font-size:13px;margin-bottom:1.2rem}
+  .hero{min-height:min(88vh,640px);background-position:center 40%}
+  .hero-inner{grid-template-columns:1fr;gap:1.2rem;padding:1.8rem 1.2rem}
+  .hero-logo-img{height:100px}
+  .hero-l h1{font-size:clamp(26px,8vw,40px);margin-bottom:.9rem}
+  .hero-l p{font-size:13px;margin-bottom:1.2rem;max-width:100%}
   .btn-mg,.btn-out{font-size:10px;padding:12px 18px}
-  .hero-r{flex-direction:row;padding:1.2rem 1rem;gap:0;justify-content:space-around}
-  .stat{border-bottom:none;border-right:1px solid rgba(255,255,255,0.25);padding-bottom:0;padding-right:1rem;margin-right:1rem;text-align:center}
-  .stat:last-child{border-right:none;padding-right:0;margin-right:0}
-  .stat-n{font-size:26px}
+  .hero-r{flex-direction:row;border-radius:10px}
+  .stat{border-bottom:none;border-right:1px solid rgba(255,255,255,0.09);padding:1.1rem 1.2rem;text-align:center;flex:1}
+  .stat:last-child{border-right:none}
+  .stat-n{font-size:24px}
   .stat-l{font-size:9px}
 
   /* Spray columna única */
@@ -209,7 +265,9 @@ footer p{font-family:var(--head);font-size:8px;font-weight:700;letter-spacing:0.
 <body>
 
 <nav>
-  <div class="logo"><b>PAT</b>PINTURAS AUTOS TORRES</div>
+  <div class="nav-logo-pill">
+    <img src="logo.png" class="nav-logo" alt="Pinturas Autos Torres">
+  </div>
   <ul class="navl">
     <li><a href="#cat">Catálogo</a></li>
     <li><a href="#ct">Contacto</a></li>
@@ -217,19 +275,24 @@ footer p{font-family:var(--head);font-size:8px;font-weight:700;letter-spacing:0.
 </nav>
 
 <section class="hero">
-  <div class="hero-l">
-    <div class="eyebrow">Balos, Las Palmas · Desde 2022</div>
-    <h1>ESPECIALISTAS<br>EN PINTURA<br>DE <span class="accent">CARROCERÍA</span></h1>
-    <p>Abrimos en abril de 2022 con personal especializado en pintura de carrocería. Pinturas, maquinaria y productos profesionales para taller y particular. Preparamos el color de tu coche en spray.</p>
-    <div class="hero-btns">
-      <a class="btn-mg" href="#cat">Ver catálogo →</a>
-      <button class="btn-out" onclick="document.getElementById('ct').scrollIntoView({behavior:'smooth'})">Contactar</button>
+  <div class="hero-inner">
+    <div class="hero-logo-wrap">
+      <img src="logo.png" class="hero-logo-img" alt="Pinturas Autos Torres – Alicia Torres">
     </div>
-  </div>
-  <div class="hero-r">
-    <div class="stat"><div class="stat-n">2022</div><div class="stat-l">Abiertos en Balos</div></div>
-    <div class="stat"><div class="stat-n">10+</div><div class="stat-l">Marcas profesionales</div></div>
-    <div class="stat"><div class="stat-n">GC</div><div class="stat-l">Gran Canaria</div></div>
+    <div class="hero-l">
+      <div class="eyebrow">Balos, Las Palmas · Desde 2022</div>
+      <h1>ESPECIALISTAS<br>EN PINTURA<br>DE <span class="accent">CARROCERÍA</span></h1>
+      <p>Abrimos en abril de 2022 con personal especializado en pintura de carrocería. Pinturas, maquinaria y productos profesionales para taller y particular. Preparamos el color de tu coche en spray.</p>
+      <div class="hero-btns">
+        <a class="btn-mg" href="#cat">Ver catálogo →</a>
+        <button class="btn-out" onclick="document.getElementById('ct').scrollIntoView({behavior:'smooth'})">Contactar</button>
+      </div>
+    </div>
+    <div class="hero-r">
+      <div class="stat"><div class="stat-n">2022</div><div class="stat-l">Abiertos en Balos</div></div>
+      <div class="stat"><div class="stat-n">10+</div><div class="stat-l">Marcas profesionales</div></div>
+      <div class="stat"><div class="stat-n">GC</div><div class="stat-l">Gran Canaria</div></div>
+    </div>
   </div>
 </section>
 
@@ -355,7 +418,10 @@ footer p{font-family:var(--head);font-size:8px;font-weight:700;letter-spacing:0.
 </div>
 
 <footer>
-  <p>© 2025 Pinturas Autos Torres</p>
+  <div class="footer-logo-pill">
+    <img src="logo.png" class="footer-logo" alt="Pinturas Autos Torres">
+  </div>
+  <p>© 2025 Pinturas Autos Torres · Alicia Torres</p>
   <p>Av. del Atlántico 719 · Balos · Las Palmas</p>
   <p>623 40 47 57</p>
 </footer>
