@@ -44,23 +44,34 @@ MARCAS = [
     ("Iwata / Sata",  ["IWATA", "SATA"]),
 ]
 
-# ── DETECCIÓN DE TIPO → CATEGORÍA WEB ────────────────────────────
-# Mapea descripciones a las 4 categorías que ya tiene la web
+# ── BASES COLORIMÉTRICAS: EXCLUIDAS DEL CATÁLOGO WEB ─────────────
+# Son mezclas profesionales (Autowave, Autocryl, Cromaqua, etc.)
+# que se usan por máquina — no se venden como producto final.
+def es_base_colorimetrica(desc: str) -> bool:
+    d = desc.upper().strip()
+    if d.startswith("BASE "):
+        return True
+    if "AUTOWAVE MM " in d:
+        return True
+    return False
+
+# ── DETECCIÓN DE CATEGORÍA WEB ────────────────────────────────────
+# Solo 3 categorías públicas. Orden importa: primera coincidencia gana.
 TIPO_A_CATEGORIA = [
-    # pinturas
-    ("pinturas", ["PINTURA", "BASE AGUA", "BASE SOLV", "AUTOWAVE", "AUTOCRYL",
-                  "CROMAUTO", "SPRAY", "BARNIZ", "LACA ", "CLEARCOAT",
-                  "FONDO", "IMPRIMACION", "IMPRIMACI", "WASH PRIMER", "PRECARGA",
-                  "CONVERTIDOR DE OXIDO", "DISOLVENTE", "CATALIZADOR", "DILUYENTE",
-                  "ENDURECEDOR", "REDUCTOR", "ACTIVADOR", "NOVOL"]),
-    # herramientas
-    ("herramientas", ["PISTOLA", "BOQUILLA", "RACOR", "AGUJA ", "AEROGRAFO",
-                      "AEROGRAFIA", "DEPOSITO GRAVEDAD", "DEPOSITO DE GRAVEDAD",
-                      "DEPOSITOS DE GRAVEDAD", "RETENEDOR DE FILTROS",
-                      "ADAPTADOR PPS", "LIJADORA", "PULIDORA", "EXCENTRICA",
-                      "SOPLADORA", "COMPRESOR", "MANGUERA", "FILTRO SEPARADOR",
-                      "CONDENSADOR ", "SAGOLA", "METABO", "DISMOER"]),
-    # accesorios (catchall - lo que no sea pinturas ni herramientas)
+    # pinturas: productos de acabado listos para usar (NO bases de mezcla)
+    ("pinturas", ["PINTURA ", "SPRAY ", "BARNIZ ", "BARNIZ.", "CLEARCOAT",
+                  "FONDO ", "FONDOS ", "IMPRIMACION", "WASH PRIMER", "WASHPRIMER",
+                  "PRECARGA", "CONVERTIDOR DE OXIDO", "CONVERTIDOR OXIDO",
+                  "ANTIGRAVILLA", "DISOLVENTE", "CATALIZADOR", "DILUYENTE",
+                  "ENDURECEDOR", "REDUCTOR ", "ACTIVADOR ", "ACELERANTE",
+                  "TEXTURADO ", "NEGRO MATE", "NEGRO SATINADO", "NEGRO TEXTURADO",
+                  "ALUMINIO LLANTAS", "ACRITOP", "AUTOCLEAR", "THINNER"]),
+    # herramientas: pistolas, lijadoras, maquinaria
+    ("herramientas", ["PISTOLA ", "BOQUILLA ", "AEROGRAFO ", "LIJADORA",
+                      "PULIDORA", "EXCENTRICA", "SOPLADORA", "COMPRESOR",
+                      "ASPIRADOR", "DEPOSITO DE GRAVEDAD", "DEPOSITO GRAVEDAD",
+                      "ADAPTADOR PPS", "ADAPTADOR PARA PPS", "VICTORIA RS"]),
+    # accesorios: todo lo demás (lijas, cintas, EPI, herramientas manuales...)
 ]
 
 def detectar_categoria(desc: str) -> str:
@@ -153,7 +164,13 @@ def main():
         input("Pulsa Enter para salir...")
         sys.exit(1)
 
-    print(f"  {len(df)} productos listos para subir")
+    # Excluir bases colorimétricas ANTES de subir al catálogo
+    mask_base = df["nombre"].apply(es_base_colorimetrica)
+    df_bases   = df[mask_base]
+    df         = df[~mask_base].copy()
+
+    print(f"  {len(df_bases):3d} bases colorimétricas EXCLUIDAS (no van al catálogo)")
+    print(f"  {len(df):3d} productos listos para subir")
     print()
 
     # Resumen por categoria

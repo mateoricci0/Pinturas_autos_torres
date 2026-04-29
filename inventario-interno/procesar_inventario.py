@@ -33,14 +33,15 @@ SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6I
 # DETECCIÓN DE MARCA
 # ──────────────────────────────────────────────
 
+# Orden importa: primero marcas más específicas para evitar falsos positivos.
+# Solo se asigna marca si hay coincidencia clara — si no, "Sin marca".
 MARCAS = [
-    ("Sikkens",       ["SIKKENS", "AUTOWAVE", "AUTOCRYL", "AUTOSURFACER"]),
+    ("Sikkens",       ["SIKKENS", "AUTOCRYL", "AUTOSURFACER", "AUTOCLEAR"]),
     ("Novol",         ["NOVOL"]),
-    ("Sagola",        ["SAGOLA", "FURA 2"]),
-    ("CRS",           ["CRS"]),
-    ("Vermaat",       ["VERMAAT", "AEROMETAL"]),
-    ("3M",            ["3M", "SCOTT BRITE", "SCOTCH-BRITE", "SCOTCHBRITE", "PPS"]),
-    ("Franchi & Kim", ["FRANCHI", "FRANCHI&KIM", "FRANCHI & KIM"]),
+    ("Sagola",        ["SAGOLA"]),
+    ("Franchi & Kim", ["FRANCHI & KIM", "FRANCHI&KIM", "FRANCHI &KIM", "F&K", "F&k"]),
+    ("Vermaat",       ["VERMAAT", "AEROMETAL", "VICTORIA "]),
+    ("3M",            ["3M ", " 3M", "SCOTCH-BRITE", "SCOTCHBRITE", "SCOTT BRITE"]),
     ("Indasa",        ["INDASA", "RHYNO"]),
     ("Metabo",        ["METABO"]),
     ("Besa",          ["BESA"]),
@@ -49,59 +50,216 @@ MARCAS = [
     ("Felton",        ["FELTON"]),
     ("Bryll",         ["BRYLL"]),
     ("Kenda",         ["KENDA", "CROMAUTO"]),
-    ("Iwata / Sata",  ["IWATA", "SATA"]),
+    ("Full Dip",      ["FULL DIP", "FULLDIPP", "FULL DIPP", "FULLDIP"]),
+    ("Wanda",         ["WANDA"]),
+    ("Hifeson",       ["HIFESON"]),
+    ("CRS",           [" CRS", "CRS "]),   # espacio para evitar falsos positivos
+    ("Iwata / Sata",  ["IWATA", " SATA"]),
 ]
 
 def detectar_marca(desc: str) -> str:
-    d = desc.upper()
+    # Añadimos espacios al inicio/fin para facilitar búsqueda con espacios
+    d = " " + desc.upper().strip() + " "
     for nombre, palabras in MARCAS:
         for p in palabras:
-            if p in d:
+            if p.upper() in d:
                 return nombre
+    # Autowave es Sikkens — lo comprobamos por separado para mayor claridad
+    if "AUTOWAVE" in d or "SIKKENS" in d:
+        return "Sikkens"
     return "Sin marca"
+
+# ──────────────────────────────────────────────
+# BASES COLORIMÉTRICAS (excluidas del catálogo web)
+# ──────────────────────────────────────────────
+
+# Detecta las bases de mezcla que NO deben publicarse en el catálogo web.
+# Regla principal: descripción empieza por "BASE ".
+# También cubre los toners AUTOWAVE MM (sin prefijo BASE).
+def es_base_colorimetrica(desc: str) -> bool:
+    import re
+    d = desc.upper().strip()
+    # Caso principal: empieza por "BASE "
+    if d.startswith("BASE "):
+        return True
+    # Toners Autowave sin prefijo BASE: "AUTOWAVE MM 350", "AUTOWAVE MM 527"...
+    if "AUTOWAVE MM " in d:
+        return True
+    # AUTOCRYL PLUS LV + código de color (R + dígitos): son bases de mezcla
+    # Ej: "AUTOCRYL PLUS LV R065", "AUTOCRYL PLUS LV R273". NO aplica a HARDENER/THINNER.
+    if re.search(r"AUTOCRYL PLUS LV R\d", d):
+        return True
+    # Cromauto con código de color sin prefijo BASE: "CROMAUTO AZUL PERLADO APC500"
+    if d.startswith("CROMAUTO "):
+        return True
+    return False
 
 # ──────────────────────────────────────────────
 # DETECCIÓN DE TIPO
 # ──────────────────────────────────────────────
 
+# Filosofía: precisión máxima. Si hay duda → "Sin clasificar".
+# El orden importa: la primera coincidencia gana.
+# Los patrones usan espacios o son frases completas para evitar coincidencias parciales.
 TIPOS = [
-    ("Lija / Abrasivo",          ["LIJA", "DISCO VELCRO", "DISCO ABRAS", "VELCRO ABRAS",
-                                   "PLIEGO SCOTT", "ESPONJA LIJAR", "ESPONJA DE LIJ", "GARLOPA"]),
-    ("Masilla",                  ["MASILLA", "UNISOFT", "POLIESTER"]),
-    ("Pintura / Base",           ["PINTURA", "BASE AGUA", "BASE SOLV", "AUTOWAVE", "AUTOCRYL",
-                                   "CROMAUTO", "BASE BICAPA", "BASE DE AGUA", "BASE WATERBASED"]),
-    ("Spray",                    ["SPRAY"]),
-    ("Barniz",                   ["BARNIZ", "LACA ", "CLEARCOAT"]),
-    ("Fondo / Imprimacion",      ["FONDO", "IMPRIMACION", "IMPRIMACI", "WASH PRIMER",
-                                   "PRECARGA", "CONVERTIDOR DE OXIDO", "ANTIOXIDANTE",
-                                   "FOSFATANTE", "INHIBIDOR"]),
-    ("Disolvente / Catalizador", ["DISOLVENTE", "CATALIZADOR", "DILUYENTE",
-                                   "ENDURECEDOR", "REDUCTOR", "ACTIVADOR"]),
-    ("Pistola / Aerografia",     ["PISTOLA", "BOQUILLA", "RACOR", "AGUJA ", "TAPA AGUJA",
-                                   "AEROGRAFO", "AEROGRAFIA", "DEPOSITO DE GRAVEDAD",
-                                   "DEPOSITO GRAVEDAD", "DEPOSITOS DE GRAVEDAD",
-                                   "RETENEDOR DE FILTROS", "ADAPTADOR PPS", "ADAPTADOR PARA AEROG",
-                                   "GRAVEDAD "]),
-    ("Lijadora / Pulidora",      ["LIJADORA", "PULIDORA", "EXCENTRICA", "SOPLADORA"]),
-    ("Compresor / Aire",         ["COMPRESOR", "MANGUERA", "REGULADOR DE PRESION",
-                                   "FILTRO SEPARADOR", "CONDENSADOR ", "ENCHUFE LATON",
-                                   "ESCOBILLAS"]),
-    ("Cinta / Enmascarado",      ["CINTA", "ENMASCARAR", "PAPEL ENCM", "FILM CON",
-                                   "FILM POLIET", "VELCRO ADHESIVO"]),
-    ("Mascarilla / EPI",         ["MASCARILLA", "MASCARILLAS", "GUANTE", "MONO ",
-                                   "MONOS ", "GAFAS", "PROTEC", "FILTRO PARTICULAS"]),
-    ("Herramienta",              ["CUTTER", "ESPATULA", "PINCEL", "BROCHA", "RODILLO",
-                                   "LLAVE", "MANGO VARILLA", "RECAMBIO VELOUR", "PINCELES",
-                                   "REGLA MEDIR"]),
-    ("Pulimento / Abrillantado", ["PULIMENTO", "ABRILLANTADOR", "AUTOGLOSS", "POLISH"]),
-    ("Limpieza",                 ["DESENGRASANTE", "LIMPIADOR", "LIMPIEZA", "SILICON OFF",
-                                   "KIT LIMPIEZA"]),
-    ("Adhesivo / Sellado",       ["ADHESIVO", "SELLADOR", "SIKAFLEX", "PEGAMENTO",
-                                   "BOQUILLAS PEGAMENTO"]),
-    ("Envase / Recipiente",      ["ENVASE DE PLASTICO", "ENVASE PLAST", "RECIPIENTE"]),
+    # ── Bases de mezcla (interno) ──────────────────────────────────
+    # Detectadas por es_base_colorimetrica() antes de llegar aquí,
+    # pero se mantienen en la lista para que aparezcan en filtros del inventario.
+    ("Base colorimétrica",   []),   # Manejado por es_base_colorimetrica()
+
+    # ── Spray aerosol ───────────────────────────────────────────────
+    # Incluye variantes con typo frecuentes en el TPVsol
+    ("Spray aerosol",        ["SPRAY ", "SPAY ", "SRAY "]),
+
+    # ── Lija / Abrasivo ─────────────────────────────────────────────
+    # "LIJA " con espacio para NO coincidir con "LIJADORA"
+    ("Lija / Abrasivo",      ["LIJA ", "LIJAS ", "DISCO VELCRO", "DISCO ABRAS",
+                               "DISCO LAMINA", "DISCO LAMINAS", "DISCO DE LIJAR",
+                               "DISCO TRIZAC", "TRIZAC", "DSCOS ABRASIVOS",
+                               "DISCOS ", "VELCRO ABRAS", "ESPONJA LIJAR",
+                               "ESPONJA DE LIJ", "GARLOPA", "BLOQUE DE LIJADO",
+                               "ALMOHADILLA ", "TACO DE LIJA", "TACO REDONDO",
+                               "TACO MINI", "TACO ", "PLIEGO SCOTT", "PLIEGO SCOT",
+                               "SCOT BRITE", "TELA FALTICA",
+                               "PLATO ", "PLATO DE LIJAR", "PLATO VELCRO",
+                               "PLATO DE APOYO", "INTERFASE ", "GOMA ABRASIVA",
+                               "KIT LIJADO", "KIT TACOS", "TACOS DE LIJADO"]),
+
+    # ── Masilla / Fibra ─────────────────────────────────────────────
+    ("Masilla / Fibra",      ["MASILLA", "MASILLLA", "UNISOFT",
+                               "PL FIBRA", "PL- FIBRA", "PL KIT DE REP",
+                               "PL PEROXIDO", "PL PLAD",
+                               "QUITA PULVERIZADOS"]),
+
+    # ── Barniz ──────────────────────────────────────────────────────
+    # "SPRAY BARNIZ" ya lo captura "Spray aerosol" (aparece antes en la lista)
+    ("Barniz",               ["BARNIZ ", "BARNIZ.", "CLEARCOAT", "AUTOCLEAR",
+                               "ACRITOP", "LACA MATE", "LACA "]),
+
+    # ── Fondo / Imprimación ─────────────────────────────────────────
+    ("Fondo / Imprimacion",  ["FONDO ", "FONDOS ", "IMPRIMACION", "IMPRIMACI",
+                               "WASH PRIMER", "WASHPRIMER", "PRECARGA",
+                               "CONVERTIDOR DE OXIDO", "CONVERTIDOR OXIDO",
+                               "ANTIGRAVILLA", "ANTIOXIDANTE", "FOSFATANTE",
+                               "1K ALL PLASTIC PRIMER", "ALL PLASTIC PRIMER",
+                               "DESOXIDANTE", "PRIMER ", "SEALER "]),
+
+    # ── Pintura / Acabado ───────────────────────────────────────────
+    # Solo pintura final en bote (no spray, no bases)
+    ("Pintura / Acabado",    ["PINTURA ", "NEGRO MATE", "NEGRO SATINADO",
+                               "NEGRO TEXTURADO", "NEGRO BRILLANTE",
+                               "TEXTURADO ", "TESTURADO ",
+                               "ALUMINIO LLANTAS", "ALUMNIO LLANTAS",
+                               "ALUMINO LLANTAS", "ALUMINIO ANTICALORICO",
+                               "ROJO ANTICALORICO", "TINTE ", "URKI-LAC", "URKI-SPRAY"]),
+
+    # ── Disolvente / Catalizador ─────────────────────────────────────
+    ("Disolvente / Catalizador", ["DISOLVENTE", "DSOLVENTE", "DISOLV ",
+                                   "CATALIZADOR", "DILUYENTE",
+                                   "ENDURECEDOR", "HARDENER", "REDUCTOR ",
+                                   "REDUCER", "ACTIVADOR ", "ACCELERATOR",
+                                   "ACELERANTE", "THINNER", "CONVERTIDOR UHS",
+                                   "ELAST-O-ACTIF", "ELASTIC-O-ACTIF"]),
+
+    # ── Pistola / Aerografía ─────────────────────────────────────────
+    ("Pistola / Aerografia", ["PISTOLA ", "PISTOLAS ", "BOQUILLA ", "AEROGRAFO ",
+                               "CEPILLOS LIMPIADORES DE AEROGRAFIA",
+                               "TAPON AEROGRAFIA", "T AEROGRAFIA",
+                               "DEPOSITO DE GRAVEDAD", "DEPOSITO GRAVEDAD",
+                               "DEPOSITOS DE GRAVEDAD", "RETENEDOR DE FILTROS",
+                               "ADAPTADOR PPS", "ADAPTADOR PARA PPS",
+                               "ADAPTADOR ALUMINIO", "ADAPTADOR PARA AEROG",
+                               "KIT PICO", "KIT PIC", "JUNTA VALVULA",
+                               "PRENSA ESTOPAS", "FILTRO PRODUCTO GRAVEDAD",
+                               "RACOR ", "RACORD", "CONECTOR ", "AGUJA ",
+                               "FURA ", "SPETTRO", "SOPLADOR DE BOLSILLO",
+                               "VICTORIA RS", "VICTORIA  RS", "VICTORIA 215"]),
+
+    # ── Lijadora / Pulidora / Maquinaria ─────────────────────────────
+    ("Lijadora / Pulidora",  ["LIJADORA", "PULIDORA", "EXCENTRICA", "SOPLADORA",
+                               "SOPLADOR DE AIRE", "ASPIRADOR ", "ASPIRADORA ",
+                               "SACABOLLOS", "KIT SABABOLLOS",
+                               "MAQUINA SOLDAR", "NANOPLASTIC",
+                               "EQUIPO DE ILUMINACION", "ALTAIR LED"]),
+
+    # ── Compresor / Aire ─────────────────────────────────────────────
+    ("Compresor / Aire",     ["COMPRESOR", "MANGUERA ", "REGULADOR DE PRESION",
+                               "REGULADOR DE AIRE", "REGULADOR PISTOLA",
+                               "REGULADOR CAUDAL", "RC1 REGULADOR", "RC2 REGULADOR",
+                               "PURIFICADOR", "CONDENSADOR ", "FILTRO SEPARADOR",
+                               "FILTRO REGULADOR", "ENCHUFE LATON", "ENCHUFE ",
+                               "PNEUMATICO", "KIT 34PCS",
+                               "VALVULA ", "VALVULA.", "T 1/2 ", "T 1/4 "]),
+
+    # ── Cinta / Enmascarado ──────────────────────────────────────────
+    ("Cinta / Enmascarado",  ["CINTA ", "ROLLO ", "BOBINA ", "CUBRETODO",
+                               "PAPEL ENCM", "FILM CON", "FILM POLIET",
+                               "VELCRO ADHESIVO"]),
+
+    # ── EPI / Protección ─────────────────────────────────────────────
+    ("EPI / Proteccion",     ["MASCARILLA", "MASCARA SILICONA", "CARETA ",
+                               "GUANTE", "MONO PINTOR", "MONO DE", "MONOS ",
+                               "GAFAS ", "FILTRO PARTICULAS", "FILTRO PARA VAPORES",
+                               "KIT FILTRO CARETA", "ABEKI FILTRO",
+                               "FILRO PARTICULAS"]),
+
+    # ── Vaso / Recipiente ────────────────────────────────────────────
+    ("Vaso / Recipiente",    ["VASO ", "VASOS ", "ENVASE DE PLASTICO",
+                               "ENVASE PLAST"]),
+
+    # ── Pulimento / Abrillantado ─────────────────────────────────────
+    ("Pulimento / Abrillantado", ["PULIMENTO", "ABRILLANTADOR", "AUTOGLOSS",
+                                   "POLISH", "POLISGH",
+                                   "PASTA PULIR", "PASTA ABRAS", "PASTA ULTRAFINA",
+                                   "PASTA DE ABRILLANTAR", "PASTA DE BRILLO",
+                                   "PASTA MATIZANTE", "PASTA  3M", "PASTA 3M",
+                                   "BOINA ", "CAPERUZA ",
+                                   "DISCO ESPUMA", "DISCO FOAM", "DISCO PULIR",
+                                   "DISCO BRILLO", "DISCO CON ESPUMA",
+                                   "ESPONJA DE PULIR", "ESPONJA PULIR ",
+                                   "ESPONJAS DE PULIR", "ESPONJAS PULIR",
+                                   "ESPONJA BRILLO", "ESPONJA DE BRILLO",
+                                   "ESPONJA VERDE DE PULIR",
+                                   "ESPONJA ACHICHON", "ESPONJA DOBLE CARA",
+                                   "MINI ESPONJA", "CERA PROTECTORA",
+                                   "BOLIGRAFO RETOQUE"]),
+
+    # ── Limpieza / Desengrasante ─────────────────────────────────────
+    ("Limpieza",             ["DESENGRASANTE", "ANTISILICONA", "SILICON OFF",
+                               "KIT LIMPIEZA", "AUTOWAVE LIMPIAPISTOLAS",
+                               "LIMPIAPISTOLAS", "GUNCLEANER",
+                               "RESTAURADOR DE PLASTICOS", "RESTAURADOR DE PLAST",
+                               "NANO FLASH", "STARK ", "PAÑOS ATRAPAPOLVO",
+                               "PAÑOS ATRAP", "LIMPIAMETALES"]),
+
+    # ── Adhesivo / Sellado ───────────────────────────────────────────
+    ("Adhesivo / Sellado",   ["ADHESIVO", "SELLADOR", "SIKAFLEX", "PEGAMENTO",
+                               "COLA DE CONTACTO", "PEGUE DE JUNTAS", "PEGUE JUNTAS",
+                               "PEGUE ", "COLA ", "GRAPAS ", "CIANOCRILATO",
+                               "CANULAS", "RESINA ORTO", "KIT FIBRA",
+                               "KIT DE FIBRA", "METAL BONDING", "REPARADOR DE PLASTICOS",
+                               "REPARACIONES DE PLASTICOS", "GODZILLA TINTABLE",
+                               "NANO ADHESIVO", "CRS METAL BONDING"]),
+
+    # ── Herramienta / Accesorio ──────────────────────────────────────
+    # Al final: patrones cortos con riesgo de falso positivo
+    ("Herramienta",          ["CUTTER", "CUCHILLAS", "ESPATULA", "PINCEL ",
+                               "PINCELES", "BROCHA ", "BROCHAS", "RODILLO",
+                               "REGLA MEDIR", "REGLA PEQUEÑA",
+                               "MANGO VARILLA", "RECAMBIO VELOUR",
+                               "KIT DESMONT", "SET MARTILLOS", "MARTILLOS Y TAS",
+                               "RASCAVIDRIOS", "VENTOSA ", "HERRAMIENTAS PARA SACAR",
+                               "KIT PARABRISAS", "HILO TRENZADO", "HILO CUADRADO",
+                               "HILO SACALUNAS", "ALAMBRE TRENZADO",
+                               "LUPA MANUAL", "ESPADIN ", "KIT REPARACION TAG",
+                               "CARBONES RUPES", "CARBONES ",
+                               "LLAVE ", "ESCOBILLAS", "SOPORTE "]),
 ]
 
 def detectar_tipo(desc: str) -> str:
+    # Primero: detectar bases colorimétricas (regla de negocio clave)
+    if es_base_colorimetrica(desc):
+        return "Base colorimétrica"
     d = desc.upper()
     for nombre, palabras in TIPOS:
         for p in palabras:
