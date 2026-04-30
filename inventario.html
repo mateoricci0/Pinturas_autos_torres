@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inventario Interno — Pinturas Autos Torres</title>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@700;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --mg:#B5006A;--mg2:#D4007A;--mg3:#F7E0EE;
+  --black:#0D0D0D;--white:#fff;--gray:#F3F3F3;--dg:#666;
+  --head:'Unbounded',sans-serif;--body:'Inter',sans-serif;
+}
+body{font-family:var(--body);background:#FAFAFA;color:var(--black);min-height:100vh}
+
+/* ── TOP BAR ── */
+.top{background:var(--mg);padding:.85rem 1.5rem;display:flex;align-items:center;gap:1rem;
+  border-bottom:3px solid var(--black);position:sticky;top:0;z-index:20;flex-wrap:wrap}
+.top-logo{font-family:var(--head);font-size:10px;font-weight:900;color:var(--white);letter-spacing:-0.01em;flex:1;min-width:0}
+.top-logo b{background:var(--white);color:var(--mg);padding:2px 7px;margin-right:5px}
+.top-right{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.top-badge{background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);
+  color:var(--white);font-size:11px;padding:4px 10px;border-radius:20px;white-space:nowrap}
+.autosave{display:flex;align-items:center;gap:6px;font-size:11px;color:rgba(255,255,255,0.85)}
+.autosave-dot{width:8px;height:8px;border-radius:50%;background:#4CAF50;flex-shrink:0;
+  box-shadow:0 0 6px rgba(76,175,80,0.8);transition:background .3s}
+.autosave-dot.saving{background:#FFB300;animation:pulse .6s infinite alternate}
+.autosave-dot.offline{background:#FFB300;box-shadow:0 0 6px rgba(255,179,0,0.8)}
+@keyframes pulse{from{opacity:1}to{opacity:.3}}
+
+/* ── DROPZONE ── */
+.dropzone-wrap{padding:1.5rem}
+.dropzone{
+  border:3px dashed #ccc;border-radius:14px;padding:2.5rem 1.5rem;text-align:center;
+  background:var(--white);transition:all .2s;cursor:pointer;
+}
+.dropzone:hover,.dropzone.drag{border-color:var(--mg);background:var(--mg3)}
+.dropzone-icon{font-size:2.5rem;margin-bottom:.5rem}
+.dropzone-title{font-family:var(--head);font-size:14px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;margin-bottom:.4rem}
+.dropzone-sub{font-size:12px;color:var(--dg)}
+.dropzone-link{color:var(--mg);font-weight:600;text-decoration:underline}
+.dropzone input[type=file]{display:none}
+
+/* ── FILTROS ── */
+.filtros{background:var(--white);border-bottom:2px solid var(--black);
+  padding:1rem 1.5rem;display:none;flex-wrap:wrap;gap:.75rem;align-items:flex-end}
+.filtros.show{display:flex}
+.f-group{display:flex;flex-direction:column;gap:4px;min-width:160px}
+.f-group label{font-size:10px;font-weight:600;text-transform:uppercase;
+  letter-spacing:.08em;color:var(--dg)}
+select,input[type=text]{
+  font-family:var(--body);font-size:13px;
+  border:1.5px solid #ddd;border-radius:6px;padding:8px 10px;
+  background:var(--white);color:var(--black);outline:none;transition:border-color .15s;
+}
+select:focus,input[type=text]:focus{border-color:var(--mg)}
+.f-actions{display:flex;gap:8px;align-items:flex-end;margin-left:auto;flex-wrap:wrap}
+.btn{font-family:var(--head);font-size:9px;font-weight:700;letter-spacing:.06em;
+  text-transform:uppercase;padding:9px 16px;border-radius:5px;border:none;
+  cursor:pointer;transition:background .15s;white-space:nowrap}
+.btn-out{background:var(--white);color:var(--black);border:2px solid #ddd}
+.btn-out:hover{border-color:var(--mg);color:var(--mg)}
+.btn-primary{background:var(--mg);color:var(--white)}
+.btn-primary:hover{background:var(--mg2)}
+.btn-primary:disabled{background:#ccc;cursor:not-allowed}
+.btn-ghost{background:transparent;color:var(--mg);border:2px solid var(--mg)}
+.btn-ghost:hover{background:var(--mg);color:var(--white)}
+
+/* ── STATS / TABLA ── */
+.stats-bar{padding:.6rem 1.5rem;background:var(--gray);border-bottom:1px solid #e0e0e0;
+  display:none;gap:1.5rem;font-size:12px;color:var(--dg);flex-wrap:wrap}
+.stats-bar.show{display:flex}
+.stats-bar b{color:var(--black)}
+.tabla-wrap{overflow-x:auto;padding:0 1.5rem 2rem;display:none}
+.tabla-wrap.show{display:block}
+table{width:100%;border-collapse:collapse;margin-top:1rem;font-size:13px}
+thead th{
+  font-family:var(--head);font-size:8px;font-weight:700;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--dg);
+  padding:10px 12px;text-align:left;border-bottom:2px solid var(--black);
+  position:sticky;top:0;background:var(--white);z-index:5;white-space:nowrap;
+}
+tbody tr{border-bottom:1px solid #eee;transition:background .1s}
+tbody tr:hover{background:var(--mg3)}
+td{padding:9px 12px;vertical-align:middle}
+td.codigo{font-family:monospace;font-size:11px;color:var(--dg);white-space:nowrap}
+td.descripcion{max-width:320px;line-height:1.4}
+td.precio{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+td.precio-costo{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;color:#888;font-size:12px}
+td.stock{text-align:center;font-weight:600}
+
+/* ── BADGES ── */
+.badge{
+  display:inline-flex;align-items:center;gap:4px;
+  font-size:10px;font-weight:500;padding:3px 9px;border-radius:12px;
+  white-space:nowrap;cursor:pointer;transition:filter .15s;user-select:none;
+}
+.badge:hover{filter:brightness(0.9)}
+.badge-marca{background:#E8F4FD;color:#1A6FA8}
+.badge-tipo{background:#F0F7EE;color:#2D7A3A}
+.badge-sin{background:#F5F5F5;color:#999}
+.badge-base{background:#FFF3E0;color:#E65100}
+.badge-editado{outline:2px solid var(--mg);outline-offset:1px}
+.badge-pencil{font-size:9px;opacity:.6}
+.stock-0{color:#C0392B;font-weight:700}
+.stock-low{color:#E67E22;font-weight:700}
+.stock-ok{color:#27AE60}
+
+/* ── POPOVER ── */
+.popover{
+  position:fixed;z-index:100;
+  background:var(--white);border:2px solid var(--black);border-radius:10px;
+  padding:14px 16px;width:270px;box-shadow:4px 4px 0 var(--black);
+  display:none;
+}
+.popover.visible{display:block}
+.popover-title{font-family:var(--head);font-size:9px;font-weight:700;
+  letter-spacing:.08em;text-transform:uppercase;color:var(--dg);margin-bottom:8px}
+.popover-desc{font-size:11px;color:#444;margin-bottom:10px;
+  border-left:3px solid var(--mg);padding-left:8px;line-height:1.4;
+  max-height:50px;overflow:hidden}
+.popover select{width:100%;margin-bottom:8px;font-size:13px}
+.popover-custom{display:flex;gap:6px;margin-bottom:10px}
+.popover-custom input{flex:1;font-size:12px;padding:6px 8px}
+.popover-custom input::placeholder{color:#bbb}
+.popover-btns{display:flex;gap:6px}
+.pop-ok{flex:1;background:var(--mg);color:var(--white);border:none;
+  border-radius:5px;padding:8px;font-family:var(--head);font-size:8px;
+  font-weight:700;letter-spacing:.06em;text-transform:uppercase;cursor:pointer}
+.pop-ok:hover{background:var(--mg2)}
+.pop-cancel{background:var(--white);color:var(--black);border:2px solid #ddd;
+  border-radius:5px;padding:8px 12px;font-family:var(--head);font-size:8px;
+  font-weight:700;letter-spacing:.06em;text-transform:uppercase;cursor:pointer}
+.pop-cancel:hover{border-color:var(--black)}
+
+/* ── TOAST + MODAL ── */
+.toast{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+  background:var(--black);color:var(--white);
+  font-size:13px;padding:10px 20px;border-radius:8px;
+  opacity:0;transition:opacity .3s;pointer-events:none;z-index:200;white-space:nowrap;
+}
+.toast.show{opacity:1}
+.empty{text-align:center;padding:4rem 2rem;color:var(--dg);display:none}
+.empty.show{display:block}
+
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;
+  align-items:center;justify-content:center;z-index:300;padding:1rem}
+.modal-bg.show{display:flex}
+.modal{background:var(--white);border:2px solid var(--black);border-radius:12px;
+  box-shadow:6px 6px 0 var(--black);max-width:520px;width:100%;padding:1.5rem;max-height:90vh;overflow:auto}
+.modal h3{font-family:var(--head);font-size:14px;font-weight:900;letter-spacing:.04em;
+  text-transform:uppercase;margin-bottom:.75rem}
+.modal p{font-size:13px;line-height:1.5;color:#333;margin-bottom:.75rem}
+.modal-stats{background:var(--gray);border-radius:8px;padding:.75rem 1rem;font-size:12px;margin-bottom:1rem}
+.modal-stats div{display:flex;justify-content:space-between;padding:3px 0}
+.modal-stats b{color:var(--mg)}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:1rem}
+.modal-log{background:#0D0D0D;color:#0F0;font-family:monospace;font-size:11px;
+  padding:.75rem;border-radius:6px;max-height:200px;overflow:auto;margin-bottom:1rem;white-space:pre-wrap}
+
+@media(max-width:640px){
+  .filtros{flex-direction:column}
+  .f-group{min-width:100%}
+  .f-actions{margin-left:0;width:100%;flex-direction:column}
+  .btn{width:100%;text-align:center}
+  table{font-size:12px}
+  thead th{font-size:7px;padding:8px}
+  td{padding:7px 8px}
+  td.descripcion{max-width:140px}
+  .popover{width:calc(100vw - 32px);left:16px!important}
+}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <div class="top-logo"><b>PAT</b>Inventario Interno</div>
+  <div class="top-right">
+    <div class="top-badge" id="top-badge" style="display:none"></div>
+    <div class="autosave" id="autosave-wrap" style="display:none">
+      <div class="autosave-dot" id="autosave-dot"></div>
+      <span id="autosave-txt">Conectando...</span>
+    </div>
+  </div>
+</div>
+
+<div class="dropzone-wrap" id="dropzone-wrap">
+  <label class="dropzone" id="dropzone">
+    <div class="dropzone-icon">📊</div>
+    <div class="dropzone-title">Suelta aquí el Inventario.XLS</div>
+    <div class="dropzone-sub">o <span class="dropzone-link">haz clic para seleccionarlo</span></div>
+    <input type="file" id="file-input" accept=".xls,.xlsx,.XLS,.XLSX">
+  </label>
+</div>
+
+<div class="filtros" id="filtros">
+  <div class="f-group">
+    <label>Marca</label>
+    <select id="sel-marca"><option value="">Todas las marcas</option></select>
+  </div>
+  <div class="f-group">
+    <label>Tipo</label>
+    <select id="sel-tipo"><option value="">Todos los tipos</option></select>
+  </div>
+  <div class="f-group">
+    <label>Buscar</label>
+    <input type="text" id="buscar" placeholder="Código o descripción…">
+  </div>
+  <div class="f-group">
+    <label>Ordenar por</label>
+    <select id="sel-orden">
+      <option value="descripcion">Descripción A-Z</option>
+      <option value="stock-asc">Stock ↑ (menor primero)</option>
+      <option value="stock-desc">Stock ↓ (mayor primero)</option>
+      <option value="costo-desc">P.Costo ↓</option>
+      <option value="costo-asc">P.Costo ↑</option>
+      <option value="precio-desc">P.Venta ↓</option>
+      <option value="precio-asc">P.Venta ↑</option>
+      <option value="marca">Marca A-Z</option>
+      <option value="editados">Editados primero</option>
+    </select>
+  </div>
+  <div class="f-actions">
+    <button class="btn btn-out" onclick="limpiarFiltros()">Limpiar</button>
+    <button class="btn btn-ghost" onclick="abrirCargaXLS()">Cambiar XLS</button>
+    <button class="btn btn-primary" id="btn-subir" onclick="abrirModalSubir()">↑ Subir al catálogo</button>
+  </div>
+</div>
+
+<div class="stats-bar" id="stats-bar"></div>
+
+<div class="tabla-wrap" id="tabla-wrap">
+  <table>
+    <thead><tr>
+      <th>Código</th>
+      <th>Descripción</th>
+      <th title="Haz clic en el badge para editar">Marca ✏</th>
+      <th title="Haz clic en el badge para editar">Tipo ✏</th>
+      <th onclick="ordenarPor('stock-asc')" style="cursor:pointer">Stock ↕</th>
+      <th onclick="ordenarPor('costo-desc')" style="cursor:pointer;color:#888" title="Precio de costo (uso interno)">P. Costo ↕</th>
+      <th onclick="ordenarPor('precio-desc')" style="cursor:pointer">P. Venta ↕</th>
+    </tr></thead>
+    <tbody id="tabla-body"></tbody>
+  </table>
+  <div class="empty" id="empty-msg">
+    <div style="font-size:2.5rem;margin-bottom:.75rem">🔍</div>
+    <div>No hay productos con estos filtros.</div>
+  </div>
+</div>
+
+<div class="popover" id="popover">
+  <div class="popover-title" id="pop-title"></div>
+  <div class="popover-desc" id="pop-desc"></div>
+  <select id="pop-select"></select>
+  <div class="popover-custom">
+    <input type="text" id="pop-custom" placeholder="O escribe una nueva…">
+  </div>
+  <div class="popover-btns">
+    <button class="pop-cancel" onclick="cerrarPopover()">Cancelar</button>
+    <button class="pop-ok" onclick="confirmarEdicion()">Guardar</button>
+  </div>
+</div>
+
+<!-- Modal Subir Catálogo -->
+<div class="modal-bg" id="modal-subir">
+  <div class="modal">
+    <h3>Subir al catálogo web</h3>
+    <p id="modal-subir-desc">
+      Se enviarán los productos a la web pública.
+      Los nuevos quedan con <b>visible = false</b> (Alicia los activa desde el panel).
+      Los existentes actualizan nombre, categoría, precio y stock.
+      <b>Las bases colorimétricas se excluyen automáticamente.</b>
+    </p>
+    <div class="modal-stats" id="modal-subir-stats"></div>
+    <div class="modal-log" id="modal-subir-log" style="display:none"></div>
+    <div class="modal-actions">
+      <button class="btn btn-out" onclick="cerrarModalSubir()" id="btn-modal-cancel">Cancelar</button>
+      <button class="btn btn-primary" id="btn-modal-confirm" onclick="confirmarSubir()">Confirmar y subir</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+/* ──────────────────────────────────────────────
+   CONFIGURACIÓN
+   ────────────────────────────────────────────── */
+const SB_URL  = 'https://avysjexafpdhzeadnxmc.supabase.co';
+const SB_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF2eXNqZXhhZnBkaHplYWRueG1jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5MzQzMTAsImV4cCI6MjA5MjUxMDMxMH0.cCB8tjDlBhhazXrFtI4hjiG5I6Gbax_Z-Q7FiznVvCk';
+const TABLA   = 'inventario_correcciones';
+const LS_KEY  = 'pat_correcciones_v1';
+const EDGE_URL   = SB_URL + '/functions/v1/sincronizar-productos';
+const SYNC_TOKEN = 'pinturas-torres-sync-2025';
+const BATCH_SIZE = 100;
+
+const sb = supabase.createClient(SB_URL, SB_KEY);
+
+/* ──────────────────────────────────────────────
+   DETECCIÓN DE MARCA  (portado 1:1 del Python)
+   Orden importa: primero marcas más específicas.
+   ────────────────────────────────────────────── */
+const MARCAS = [
+  ["Sikkens",       ["SIKKENS","AUTOCRYL","AUTOSURFACER","AUTOCLEAR"]],
+  ["Novol",         ["NOVOL"]],
+  ["Sagola",        ["SAGOLA"]],
+  ["Franchi & Kim", ["FRANCHI & KIM","FRANCHI&KIM","FRANCHI &KIM","F&K","F&k"]],
+  ["Vermaat",       ["VERMAAT","AEROMETAL","VICTORIA "]],
+  ["3M",            ["3M "," 3M ","SCOTCH-BRITE","SCOTCHBRITE","SCOTT BRITE"]],
+  ["Indasa",        ["INDASA","RHYNO"]],
+  ["Metabo",        ["METABO"]],
+  ["Besa",          ["BESA"]],
+  ["Dismoer",       ["DISMOER"]],
+  ["Airum",         ["AIRUM"]],
+  ["Felton",        ["FELTON"]],
+  ["Bryll",         ["BRYLL"]],
+  ["Kenda",         ["KENDA","CROMAUTO"]],
+  ["Full Dip",      ["FULL DIP","FULLDIPP","FULL DIPP","FULLDIP"]],
+  ["Wanda",         ["WANDA"]],
+  ["Hifeson",       ["HIFESON"]],
+  ["CRS",           [" CRS","CRS "]],
+  ["Iwata / Sata",  ["IWATA"," SATA"]],
+];
+
+function detectarMarca(desc) {
+  const d = " " + (desc || "").toUpperCase().trim() + " ";
+  for (const [nombre, palabras] of MARCAS) {
+    for (const p of palabras) {
+      if (d.includes(p.toUpperCase())) return nombre;
+    }
+  }
+  if (d.includes("AUTOWAVE") || d.includes("SIKKENS")) return "Sikkens";
+  return "Sin marca";
+}
+
+/* ──────────────────────────────────────────────
+   BASES COLORIMÉTRICAS (excluidas del catálogo web)
+   Regla principal: descripción empieza por "BASE ".
+   También cubre toners AUTOWAVE MM y AUTOCRYL PLUS LV R###.
+   ────────────────────────────────────────────── */
+function esBaseColorimetrica(desc) {
+  const d = (desc || "").toUpperCase().trim();
+  if (d.startsWith("BASE ")) return true;
+  if (d.includes("AUTOWAVE MM ")) return true;
+  if (/AUTOCRYL PLUS LV R\d/.test(d)) return true;
+  if (d.startsWith("CROMAUTO ")) return true;
+  return false;
+}
+
+/* ──────────────────────────────────────────────
+   DETECCIÓN DE TIPO  (portado 1:1 del Python)
+   Orden importa: la primera coincidencia gana.
+   ────────────────────────────────────────────── */
+const TIPOS = [
+  ["Base colorimétrica",   []],
+  ["Spray aerosol",        ["SPRAY ","SPAY ","SRAY "]],
+  ["Lija / Abrasivo",      ["LIJA ","LIJAS ","DISCO VELCRO","DISCO ABRAS",
+                            "DISCO LAMINA","DISCO LAMINAS","DISCO DE LIJAR",
+                            "DISCO TRIZAC","TRIZAC","DSCOS ABRASIVOS",
+                            "DISCOS ","VELCRO ABRAS","ESPONJA LIJAR",
+                            "ESPONJA DE LIJ","GARLOPA","BLOQUE DE LIJADO",
+                            "ALMOHADILLA ","TACO DE LIJA","TACO REDONDO",
+                            "TACO MINI","TACO ","PLIEGO SCOTT","PLIEGO SCOT",
+                            "SCOT BRITE","TELA FALTICA",
+                            "PLATO ","PLATO DE LIJAR","PLATO VELCRO",
+                            "PLATO DE APOYO","INTERFASE ","GOMA ABRASIVA",
+                            "KIT LIJADO","KIT TACOS","TACOS DE LIJADO"]],
+  ["Masilla / Fibra",      ["MASILLA","MASILLLA","UNISOFT",
+                            "PL FIBRA","PL- FIBRA","PL KIT DE REP",
+                            "PL PEROXIDO","PL PLAD",
+                            "QUITA PULVERIZADOS"]],
+  ["Barniz",               ["BARNIZ ","BARNIZ.","CLEARCOAT","AUTOCLEAR",
+                            "ACRITOP","LACA MATE","LACA "]],
+  ["Fondo / Imprimacion",  ["FONDO ","FONDOS ","IMPRIMACION","IMPRIMACI",
+                            "WASH PRIMER","WASHPRIMER","PRECARGA",
+                            "CONVERTIDOR DE OXIDO","CONVERTIDOR OXIDO",
+                            "ANTIGRAVILLA","ANTIOXIDANTE","FOSFATANTE",
+                            "1K ALL PLASTIC PRIMER","ALL PLASTIC PRIMER",
+                            "DESOXIDANTE","PRIMER ","SEALER "]],
+  ["Pintura / Acabado",    ["PINTURA ","NEGRO MATE","NEGRO SATINADO",
+                            "NEGRO TEXTURADO","NEGRO BRILLANTE",
+                            "TEXTURADO ","TESTURADO ",
+                            "ALUMINIO LLANTAS","ALUMNIO LLANTAS",
+                            "ALUMINO LLANTAS","ALUMINIO ANTICALORICO",
+                            "ROJO ANTICALORICO","TINTE ","URKI-LAC","URKI-SPRAY"]],
+  ["Disolvente / Catalizador", ["DISOLVENTE","DSOLVENTE","DISOLV ",
+                                "CATALIZADOR","DILUYENTE",
+                                "ENDURECEDOR","HARDENER","REDUCTOR ",
+                                "REDUCER","ACTIVADOR ","ACCELERATOR",
+                                "ACELERANTE","THINNER","CONVERTIDOR UHS",
+                                "ELAST-O-ACTIF","ELASTIC-O-ACTIF"]],
+  ["Pistola / Aerografia", ["PISTOLA ","PISTOLAS ","BOQUILLA ","AEROGRAFO ",
+                            "CEPILLOS LIMPIADORES DE AEROGRAFIA",
+                            "TAPON AEROGRAFIA","T AEROGRAFIA",
+                            "DEPOSITO DE GRAVEDAD","DEPOSITO GRAVEDAD",
+                            "DEPOSITOS DE GRAVEDAD","RETENEDOR DE FILTROS",
+                            "ADAPTADOR PPS","ADAPTADOR PARA PPS",
+                            "ADAPTADOR ALUMINIO","ADAPTADOR PARA AEROG",
+                            "KIT PICO","KIT PIC","JUNTA VALVULA",
+                            "PRENSA ESTOPAS","FILTRO PRODUCTO GRAVEDAD",
+                            "RACOR ","RACORD","CONECTOR ","AGUJA ",
+                            "FURA ","SPETTRO","SOPLADOR DE BOLSILLO",
+                            "VICTORIA RS","VICTORIA  RS","VICTORIA 215"]],
+  ["Lijadora / Pulidora",  ["LIJADORA","PULIDORA","EXCENTRICA","SOPLADORA",
+                            "SOPLADOR DE AIRE","ASPIRADOR ","ASPIRADORA ",
+                            "SACABOLLOS","KIT SABABOLLOS",
+                            "MAQUINA SOLDAR","NANOPLASTIC",
+                            "EQUIPO DE ILUMINACION","ALTAIR LED"]],
+  ["Compresor / Aire",     ["COMPRESOR","MANGUERA ","REGULADOR DE PRESION",
+                            "REGULADOR DE AIRE","REGULADOR PISTOLA",
+                            "REGULADOR CAUDAL","RC1 REGULADOR","RC2 REGULADOR",
+                            "PURIFICADOR","CONDENSADOR ","FILTRO SEPARADOR",
+                            "FILTRO REGULADOR","ENCHUFE LATON","ENCHUFE ",
+                            "PNEUMATICO","KIT 34PCS",
+                            "VALVULA ","VALVULA.","T 1/2 ","T 1/4 "]],
+  ["Cinta / Enmascarado",  ["CINTA ","ROLLO ","BOBINA ","CUBRETODO",
+                            "PAPEL ENCM","FILM CON","FILM POLIET",
+                            "VELCRO ADHESIVO"]],
+  ["EPI / Proteccion",     ["MASCARILLA","MASCARA SILICONA","CARETA ",
+                            "GUANTE","MONO PINTOR","MONO DE","MONOS ",
+                            "GAFAS ","FILTRO PARTICULAS","FILTRO PARA VAPORES",
+                            "KIT FILTRO CARETA","ABEKI FILTRO",
+                            "FILRO PARTICULAS"]],
+  ["Vaso / Recipiente",    ["VASO ","VASOS ","ENVASE DE PLASTICO",
+                            "ENVASE PLAST"]],
+  ["Pulimento / Abrillantado", ["PULIMENTO","ABRILLANTADOR","AUTOGLOSS",
+                                "POLISH","POLISGH",
+                                "PASTA PULIR","PASTA ABRAS","PASTA ULTRAFINA",
+                                "PASTA DE ABRILLANTAR","PASTA DE BRILLO",
+                                "PASTA MATIZANTE","PASTA  3M","PASTA 3M",
+                                "BOINA ","CAPERUZA ",
+                                "DISCO ESPUMA","DISCO FOAM","DISCO PULIR",
+                                "DISCO BRILLO","DISCO CON ESPUMA",
+                                "ESPONJA DE PULIR","ESPONJA PULIR ",
+                                "ESPONJAS DE PULIR","ESPONJAS PULIR",
+                                "ESPONJA BRILLO","ESPONJA DE BRILLO",
+                                "ESPONJA VERDE DE PULIR",
+                                "ESPONJA ACHICHON","ESPONJA DOBLE CARA",
+                                "MINI ESPONJA","CERA PROTECTORA",
+                                "BOLIGRAFO RETOQUE"]],
+  ["Limpieza",             ["DESENGRASANTE","ANTISILICONA","SILICON OFF",
+                            "KIT LIMPIEZA","AUTOWAVE LIMPIAPISTOLAS",
+                            "LIMPIAPISTOLAS","GUNCLEANER",
+                            "RESTAURADOR DE PLASTICOS","RESTAURADOR DE PLAST",
+                            "NANO FLASH","STARK ","PAÑOS ATRAPAPOLVO",
+                            "PAÑOS ATRAP","LIMPIAMETALES"]],
+  ["Adhesivo / Sellado",   ["ADHESIVO","SELLADOR","SIKAFLEX","PEGAMENTO",
+                            "COLA DE CONTACTO","PEGUE DE JUNTAS","PEGUE JUNTAS",
+                            "PEGUE ","COLA ","GRAPAS ","CIANOCRILATO",
+                            "CANULAS","RESINA ORTO","KIT FIBRA",
+                            "KIT DE FIBRA","METAL BONDING","REPARADOR DE PLASTICOS",
+                            "REPARACIONES DE PLASTICOS","GODZILLA TINTABLE",
+                            "NANO ADHESIVO","CRS METAL BONDING"]],
+  ["Herramienta",          ["CUTTER","CUCHILLAS","ESPATULA","PINCEL ",
+                            "PINCELES","BROCHA ","BROCHAS","RODILLO",
+                            "REGLA MEDIR","REGLA PEQUEÑA",
+                            "MANGO VARILLA","RECAMBIO VELOUR",
+                            "KIT DESMONT","SET MARTILLOS","MARTILLOS Y TAS",
+                            "RASCAVIDRIOS","VENTOSA ","HERRAMIENTAS PARA SACAR",
+                            "KIT PARABRISAS","HILO TRENZADO","HILO CUADRADO",
+                            "HILO SACALUNAS","ALAMBRE TRENZADO",
+                            "LUPA MANUAL","ESPADIN ","KIT REPARACION TAG",
+                            "CARBONES RUPES","CARBONES ",
+                            "LLAVE ","ESCOBILLAS","SOPORTE "]],
+];
+
+function detectarTipo(desc) {
+  if (esBaseColorimetrica(desc)) return "Base colorimétrica";
+  const d = (desc || "").toUpperCase();
+  for (const [nombre, palabras] of TIPOS) {
+    for (const p of palabras) {
+      if (d.includes(p)) return nombre;
+    }
+  }
+  return "Sin clasificar";
+}
+
+/* ──────────────────────────────────────────────
+   DETECCIÓN DE CATEGORÍA WEB (subir_catalogo.py)
+   Solo 3 categorías públicas. Orden importa.
+   ────────────────────────────────────────────── */
+const TIPO_A_CATEGORIA = [
+  ["pinturas", ["PINTURA ","SPRAY ","BARNIZ ","BARNIZ.","CLEARCOAT",
+                "FONDO ","FONDOS ","IMPRIMACION","WASH PRIMER","WASHPRIMER",
+                "PRECARGA","CONVERTIDOR DE OXIDO","CONVERTIDOR OXIDO",
+                "ANTIGRAVILLA","DISOLVENTE","CATALIZADOR","DILUYENTE",
+                "ENDURECEDOR","REDUCTOR ","ACTIVADOR ","ACELERANTE",
+                "TEXTURADO ","NEGRO MATE","NEGRO SATINADO","NEGRO TEXTURADO",
+                "ALUMINIO LLANTAS","ACRITOP","AUTOCLEAR","THINNER"]],
+  ["herramientas", ["PISTOLA ","BOQUILLA ","AEROGRAFO ","LIJADORA",
+                    "PULIDORA","EXCENTRICA","SOPLADORA","COMPRESOR",
+                    "ASPIRADOR","DEPOSITO DE GRAVEDAD","DEPOSITO GRAVEDAD",
+                    "ADAPTADOR PPS","ADAPTADOR PARA PPS","VICTORIA RS"]],
+];
+
+function detectarCategoria(desc) {
+  const d = (desc || "").toUpperCase();
+  for (const [cat, palabras] of TIPO_A_CATEGORIA) {
+    if (palabras.some(p => d.includes(p))) return cat;
+  }
+  return "accesorios";
+}
+
+/* ──────────────────────────────────────────────
+   ESTADO GLOBAL
+   ────────────────────────────────────────────── */
+let TODOS_ORIG = [];      // productos tal como salen del XLS
+let TODOS = [];           // con correcciones aplicadas
+let correcciones = {};    // { codigo: { marca, tipo } }
+let MARCAS_BASE = [];
+let TIPOS_BASE = [];
+let nombreXLS = '';
+let ordenActual = 'descripcion';
+let popIdx = null, popCampo = null;
+
+/* ──────────────────────────────────────────────
+   LECTURA DEL XLS  (portado de leer_inventario / leer_xls)
+   ────────────────────────────────────────────── */
+function leerInventarioDesdeWorkbook(workbook) {
+  const sheetName = workbook.SheetNames[0];
+  const sheet = workbook.Sheets[sheetName];
+  // Primero: matriz cruda, sin cabeceras, para localizar la fila que contiene "código"
+  const rawRows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: null, raw: false });
+
+  let headerRow = -1;
+  for (let i = 0; i < rawRows.length; i++) {
+    const row = rawRows[i];
+    if (!Array.isArray(row)) continue;
+    const found = row.some(v => v !== null && v !== undefined &&
+                                String(v).toLowerCase().includes('digo'));
+    if (found) { headerRow = i; break; }
+  }
+  if (headerRow < 0) {
+    throw new Error('No se encontró la fila de cabeceras en el XLS.');
+  }
+
+  const headers = rawRows[headerRow].map(h => h == null ? '' : String(h));
+  const dataRows = rawRows.slice(headerRow + 1);
+
+  // Mapear columnas por nombre (mismo criterio que el Python)
+  const colMap = {};
+  headers.forEach((col, i) => {
+    const c = col.toLowerCase();
+    if (c.includes('digo'))                       colMap[i] = 'codigo';
+    else if (c.includes('escri'))                 colMap[i] = 'descripcion';
+    else if (c.includes('costo') || c.includes('coste')) colMap[i] = 'precio_costo';
+    else if (c.includes('venta'))                 colMap[i] = 'precio_venta';
+    else if (c.includes('stock'))                 colMap[i] = 'stock';
+  });
+
+  const productos = [];
+  for (const row of dataRows) {
+    if (!Array.isArray(row)) continue;
+    const obj = { codigo: '', descripcion: '', precio_costo: 0, precio_venta: 0, stock: 0 };
+    for (const [iStr, key] of Object.entries(colMap)) {
+      const val = row[Number(iStr)];
+      obj[key] = val;
+    }
+    // Saltar filas sin descripción
+    if (obj.descripcion == null) continue;
+    const desc = String(obj.descripcion).trim();
+    if (desc.length <= 1) continue;
+
+    obj.descripcion  = desc;
+    obj.codigo       = obj.codigo == null ? '' : String(obj.codigo).trim();
+    obj.stock        = Math.trunc(toNum(obj.stock));
+    obj.precio_costo = redondear2(toNum(obj.precio_costo));
+    obj.precio_venta = redondear2(toNum(obj.precio_venta));
+    obj.marca        = detectarMarca(desc);
+    obj.tipo         = detectarTipo(desc);
+
+    productos.push(obj);
+  }
+  return productos;
+}
+
+function toNum(v) {
+  if (v === null || v === undefined || v === '') return 0;
+  if (typeof v === 'number') return isFinite(v) ? v : 0;
+  // El XLS de TPVsol puede traer "1.234,56" o "1,234.56" → normalizamos
+  let s = String(v).trim().replace(/\s/g, '');
+  if (s.includes(',') && s.includes('.')) {
+    // Asumimos formato europeo: punto = miles, coma = decimal
+    s = s.replace(/\./g, '').replace(',', '.');
+  } else if (s.includes(',')) {
+    s = s.replace(',', '.');
+  }
+  const n = parseFloat(s);
+  return isFinite(n) ? n : 0;
+}
+
+function redondear2(n) { return Math.round(n * 100) / 100; }
+
+/* ──────────────────────────────────────────────
+   DROPZONE
+   ────────────────────────────────────────────── */
+const dz = document.getElementById('dropzone');
+const fileInput = document.getElementById('file-input');
+
+dz.addEventListener('click', e => {
+  // El label ya activa el input por defecto, pero por si acaso
+  if (e.target.tagName !== 'INPUT') fileInput.click();
+});
+['dragenter','dragover'].forEach(ev => {
+  dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.add('drag'); });
+});
+['dragleave','drop'].forEach(ev => {
+  dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.remove('drag'); });
+});
+dz.addEventListener('drop', e => {
+  if (e.dataTransfer.files && e.dataTransfer.files[0]) procesarArchivo(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', e => {
+  if (e.target.files && e.target.files[0]) procesarArchivo(e.target.files[0]);
+});
+
+function abrirCargaXLS() { fileInput.click(); }
+
+async function procesarArchivo(file) {
+  try {
+    const buf = await file.arrayBuffer();
+    const wb = XLSX.read(buf, { type: 'array' });
+    const productos = leerInventarioDesdeWorkbook(wb);
+    if (!productos.length) {
+      mostrarToast('El archivo no contiene productos válidos.');
+      return;
+    }
+    nombreXLS = file.name;
+    inicializarConDatos(productos);
+  } catch (err) {
+    console.error(err);
+    mostrarToast('Error leyendo el XLS: ' + err.message);
+  }
+}
+
+/* ──────────────────────────────────────────────
+   INICIALIZACIÓN TRAS CARGAR XLS
+   ────────────────────────────────────────────── */
+function inicializarConDatos(productos) {
+  TODOS_ORIG = productos;
+  MARCAS_BASE = [...new Set(productos.map(p => p.marca))].sort();
+  TIPOS_BASE  = [...new Set(productos.map(p => p.tipo))].sort();
+
+  // Mostrar UI
+  document.getElementById('dropzone-wrap').style.display = 'none';
+  document.getElementById('filtros').classList.add('show');
+  document.getElementById('stats-bar').classList.add('show');
+  document.getElementById('tabla-wrap').classList.add('show');
+  document.getElementById('top-badge').style.display = '';
+  document.getElementById('top-badge').textContent = productos.length + ' productos · ' + nombreXLS;
+  document.getElementById('autosave-wrap').style.display = '';
+
+  cargarCorrecciones();
+}
+
+/* ──────────────────────────────────────────────
+   CORRECCIONES (Supabase + localStorage fallback)
+   ────────────────────────────────────────────── */
+function claveProducto(p) {
+  const c = (p.codigo || '').trim();
+  if (c && c !== '—') return c;
+  // Fallback: hash básico de la descripción
+  return 'desc_' + btoa(encodeURIComponent(p.descripcion.slice(0, 60))).slice(0, 20);
+}
+
+function aplicarCorreccionesADatos() {
+  TODOS = TODOS_ORIG.map((p, i) => {
+    const key = claveProducto(p);
+    const c = correcciones[key] || {};
+    return { ...p, _idx: i, _key: key,
+             marca: c.marca ?? p.marca,
+             tipo:  c.tipo  ?? p.tipo };
+  });
+}
+
+async function cargarCorrecciones() {
+  setIndicador('cargando');
+  try {
+    const { data, error } = await sb.from(TABLA).select('codigo,marca,tipo');
+    if (error) throw error;
+    correcciones = {};
+    (data || []).forEach(row => {
+      correcciones[row.codigo] = { marca: row.marca, tipo: row.tipo };
+    });
+    localStorage.setItem(LS_KEY, JSON.stringify(correcciones));
+    setIndicador('ok');
+  } catch (err) {
+    console.warn('Sin conexión con Supabase:', err.message);
+    try { correcciones = JSON.parse(localStorage.getItem(LS_KEY) || '{}'); } catch(e) {}
+    setIndicador('offline');
+  }
+  aplicarCorreccionesADatos();
+  poblarSelects();
+  aplicarFiltros();
+}
+
+async function guardarCorreccion(key, marca, tipo) {
+  setIndicador('guardando');
+  try {
+    const { error } = await sb.from(TABLA).upsert(
+      { codigo: key, marca, tipo, actualizado_at: new Date().toISOString() },
+      { onConflict: 'codigo' }
+    );
+    if (error) throw error;
+    localStorage.setItem(LS_KEY, JSON.stringify(correcciones));
+    setIndicador('ok');
+  } catch (err) {
+    localStorage.setItem(LS_KEY, JSON.stringify(correcciones));
+    setIndicador('offline');
+    mostrarToast('Sin internet — guardado solo en este dispositivo');
+  }
+}
+
+function setIndicador(estado) {
+  const dot = document.getElementById('autosave-dot');
+  const txt = document.getElementById('autosave-txt');
+  const n = Object.keys(correcciones).length;
+  dot.className = 'autosave-dot';
+  dot.style.background = '';
+  dot.style.boxShadow  = '';
+  if (estado === 'cargando' || estado === 'guardando') {
+    dot.classList.add('saving');
+    txt.textContent = estado === 'cargando' ? 'Cargando...' : 'Guardando...';
+  } else if (estado === 'ok') {
+    dot.style.background = '#4CAF50';
+    dot.style.boxShadow  = '0 0 6px rgba(76,175,80,0.8)';
+    txt.textContent = n > 0
+      ? n + ' cambio' + (n===1?'':'s') + ' guardado' + (n===1?'':'s')
+      : 'Sincronizado';
+  } else {
+    dot.classList.add('offline');
+    txt.textContent = 'Sin conexión — guardado local';
+  }
+}
+
+/* ──────────────────────────────────────────────
+   FILTROS, ORDEN, RENDER
+   ────────────────────────────────────────────── */
+const selMarca = document.getElementById('sel-marca');
+const selTipo  = document.getElementById('sel-tipo');
+
+function todasMarcas() {
+  return [...new Set([...MARCAS_BASE, ...TODOS.map(p=>p.marca)])].sort();
+}
+function todosTipos() {
+  return [...new Set([...TIPOS_BASE, ...TODOS.map(p=>p.tipo)])].sort();
+}
+
+function poblarSelects() {
+  const mAct = selMarca.value, tAct = selTipo.value;
+  selMarca.innerHTML = '<option value="">Todas las marcas</option>';
+  selTipo.innerHTML  = '<option value="">Todos los tipos</option>';
+  todasMarcas().forEach(m => {
+    const o = document.createElement('option');
+    o.value = m; o.textContent = m;
+    if (m === mAct) o.selected = true;
+    selMarca.appendChild(o);
+  });
+  todosTipos().forEach(t => {
+    const o = document.createElement('option');
+    o.value = t; o.textContent = t;
+    if (t === tAct) o.selected = true;
+    selTipo.appendChild(o);
+  });
+}
+
+function ordenarPor(ord) {
+  document.getElementById('sel-orden').value = ord;
+  ordenActual = ord;
+  aplicarFiltros();
+}
+
+function limpiarFiltros() {
+  selMarca.value = ''; selTipo.value = '';
+  document.getElementById('buscar').value = '';
+  document.getElementById('sel-orden').value = 'descripcion';
+  ordenActual = 'descripcion';
+  aplicarFiltros();
+}
+
+function aplicarFiltros() {
+  const marca = selMarca.value;
+  const tipo  = selTipo.value;
+  const busq  = document.getElementById('buscar').value.toLowerCase().trim();
+  ordenActual = document.getElementById('sel-orden').value;
+
+  let lista = TODOS.filter(p => {
+    if (marca && p.marca !== marca) return false;
+    if (tipo  && p.tipo  !== tipo)  return false;
+    if (busq && !((p.descripcion+' '+p.codigo).toLowerCase().includes(busq))) return false;
+    return true;
+  });
+
+  lista.sort((a, b) => {
+    const aE = !!correcciones[a._key], bE = !!correcciones[b._key];
+    switch (ordenActual) {
+      case 'stock-asc':   return a.stock - b.stock;
+      case 'stock-desc':  return b.stock - a.stock;
+      case 'costo-desc':  return (b.precio_costo||0) - (a.precio_costo||0);
+      case 'costo-asc':   return (a.precio_costo||0) - (b.precio_costo||0);
+      case 'precio-desc': return b.precio_venta - a.precio_venta;
+      case 'precio-asc':  return a.precio_venta - b.precio_venta;
+      case 'marca':       return a.marca.localeCompare(b.marca);
+      case 'editados':    return (bE - aE) || a.descripcion.localeCompare(b.descripcion);
+      default:            return a.descripcion.localeCompare(b.descripcion);
+    }
+  });
+
+  renderTabla(lista);
+  actualizarStats(lista, marca, tipo);
+}
+
+function stockClass(s) { return s===0?'stock-0':s<=2?'stock-low':'stock-ok'; }
+
+function badgeClass(val, campo) {
+  if (val === 'Base colorimétrica') return 'badge-base';
+  if (val === 'Sin marca' || val === 'Sin clasificar') return 'badge-sin';
+  return campo === 'marca' ? 'badge-marca' : 'badge-tipo';
+}
+
+function renderTabla(lista) {
+  const body  = document.getElementById('tabla-body');
+  const empty = document.getElementById('empty-msg');
+  if (!lista.length) {
+    body.innerHTML = '';
+    empty.classList.add('show');
+    return;
+  }
+  empty.classList.remove('show');
+  body.innerHTML = lista.map(p => {
+    const costoStr = (p.precio_costo||0) > 0
+      ? p.precio_costo.toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' €'
+      : '—';
+    const precioStr = p.precio_venta > 0
+      ? p.precio_venta.toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' €'
+      : '—';
+    const corr = correcciones[p._key] || {};
+    const mEdit = !!corr.marca, tEdit = !!corr.tipo;
+    const lapiz = '<span class="badge-pencil">✏</span>';
+    const bMarca = `<span class="badge ${badgeClass(p.marca,'marca')}${mEdit?' badge-editado':''}"
+      onclick="abrirPopover(event,${p._idx},'marca')" title="Clic para cambiar la marca">
+      ${escapeHtml(p.marca)} ${mEdit?lapiz:''}</span>`;
+    const bTipo = `<span class="badge ${badgeClass(p.tipo,'tipo')}${tEdit?' badge-editado':''}"
+      onclick="abrirPopover(event,${p._idx},'tipo')" title="Clic para cambiar el tipo">
+      ${escapeHtml(p.tipo)} ${tEdit?lapiz:''}</span>`;
+    return `<tr>
+      <td class="codigo">${escapeHtml(p.codigo) || '—'}</td>
+      <td class="descripcion">${escapeHtml(p.descripcion)}</td>
+      <td>${bMarca}</td>
+      <td>${bTipo}</td>
+      <td class="stock"><span class="${stockClass(p.stock)}">${p.stock}</span></td>
+      <td class="precio-costo">${costoStr}</td>
+      <td class="precio">${precioStr}</td>
+    </tr>`;
+  }).join('');
+}
+
+function escapeHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
+}
+
+function actualizarStats(lista, marca, tipo) {
+  const total = TODOS.length;
+  const sinStock  = lista.filter(p=>p.stock===0).length;
+  const stockBajo = lista.filter(p=>p.stock>0 && p.stock<=2).length;
+  const bases     = lista.filter(p=>p.tipo==='Base colorimétrica').length;
+  const nEdit     = Object.keys(correcciones).length;
+  document.getElementById('stats-bar').innerHTML = `
+    Mostrando <b>${lista.length}</b> de <b>${total}</b> productos
+    &nbsp;&middot;&nbsp; Sin stock: <b style="color:#C0392B">${sinStock}</b>
+    &nbsp;&middot;&nbsp; Stock bajo (&le;2): <b style="color:#E67E22">${stockBajo}</b>
+    &nbsp;&middot;&nbsp; Bases: <b style="color:#E65100">${bases}</b>
+    ${nEdit>0?`&nbsp;&middot;&nbsp; Editados: <b style="color:var(--mg)">${nEdit}</b>`:''}
+    ${marca?`&nbsp;&middot;&nbsp; Marca: <b>${escapeHtml(marca)}</b>`:''}
+    ${tipo ?`&nbsp;&middot;&nbsp; Tipo: <b>${escapeHtml(tipo)}</b>` :''}
+  `;
+}
+
+/* ──────────────────────────────────────────────
+   POPOVER DE EDICIÓN (marca / tipo)
+   ────────────────────────────────────────────── */
+function abrirPopover(e, idx, campo) {
+  e.stopPropagation();
+  popIdx = idx; popCampo = campo;
+  const p = TODOS[idx];
+  const pop = document.getElementById('popover');
+  document.getElementById('pop-title').textContent =
+    campo === 'marca' ? 'Cambiar marca' : 'Cambiar tipo';
+  document.getElementById('pop-desc').textContent = p.descripcion;
+  document.getElementById('pop-custom').value = '';
+  const sel = document.getElementById('pop-select');
+  sel.innerHTML = '';
+  (campo==='marca' ? todasMarcas() : todosTipos()).forEach(v => {
+    const o = document.createElement('option');
+    o.value = v; o.textContent = v;
+    if (v === p[campo]) o.selected = true;
+    sel.appendChild(o);
+  });
+  const margin=12, pw=270, ph=230;
+  let top=e.clientY+margin, left=e.clientX-10;
+  if (left+pw > window.innerWidth-margin)  left = window.innerWidth-pw-margin;
+  if (top+ph  > window.innerHeight-margin) top  = e.clientY-ph-margin;
+  pop.style.top=top+'px'; pop.style.left=left+'px';
+  pop.classList.add('visible');
+  document.getElementById('pop-custom').focus();
+}
+
+function cerrarPopover() {
+  document.getElementById('popover').classList.remove('visible');
+  popIdx = null; popCampo = null;
+}
+
+async function confirmarEdicion() {
+  if (popIdx === null) return;
+  const custom   = document.getElementById('pop-custom').value.trim();
+  const nuevoVal = custom || document.getElementById('pop-select').value;
+  const p   = TODOS[popIdx];
+  const key = p._key;
+
+  if (!correcciones[key]) correcciones[key] = {};
+  correcciones[key][popCampo] = nuevoVal;
+  TODOS[popIdx][popCampo] = nuevoVal;
+
+  poblarSelects();
+  aplicarFiltros();
+  cerrarPopover();
+  mostrarToast('Guardado: "' + nuevoVal + '"');
+
+  await guardarCorreccion(key, correcciones[key].marca ?? null, correcciones[key].tipo ?? null);
+}
+
+document.addEventListener('click', e => {
+  const pop = document.getElementById('popover');
+  if (pop.classList.contains('visible') && !pop.contains(e.target)) cerrarPopover();
+});
+document.getElementById('pop-custom').addEventListener('keydown', e => {
+  if (e.key === 'Enter') confirmarEdicion();
+  if (e.key === 'Escape') cerrarPopover();
+});
+
+let toastT;
+function mostrarToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastT);
+  toastT = setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+selMarca.addEventListener('change', aplicarFiltros);
+selTipo.addEventListener('change', aplicarFiltros);
+document.getElementById('sel-orden').addEventListener('change', aplicarFiltros);
+let debT;
+document.getElementById('buscar').addEventListener('input', () => {
+  clearTimeout(debT); debT = setTimeout(aplicarFiltros, 200);
+});
+
+/* ──────────────────────────────────────────────
+   SUBIR AL CATÁLOGO WEB  (reemplaza subir_catalogo.py)
+   Llama a la misma Edge Function vía POST con x-sync-token.
+   ────────────────────────────────────────────── */
+function abrirModalSubir() {
+  if (!TODOS.length) {
+    mostrarToast('Carga primero un XLS');
+    return;
+  }
+  const bases = TODOS.filter(p => esBaseColorimetrica(p.descripcion));
+  const subibles = TODOS.filter(p => !esBaseColorimetrica(p.descripcion));
+
+  const porCat = {};
+  subibles.forEach(p => {
+    const c = detectarCategoria(p.descripcion);
+    porCat[c] = (porCat[c] || 0) + 1;
+  });
+  const filasCat = Object.entries(porCat)
+    .sort((a,b)=>b[1]-a[1])
+    .map(([c,n])=>`<div><span>${c}</span><b>${n}</b></div>`).join('');
+
+  document.getElementById('modal-subir-stats').innerHTML = `
+    <div><span>Total productos en XLS</span><b>${TODOS.length}</b></div>
+    <div><span>Bases colorimétricas (excluidas)</span><b>${bases.length}</b></div>
+    <div><span>Listos para subir</span><b>${subibles.length}</b></div>
+    <div style="border-top:1px dashed #ccc;margin:6px 0"></div>
+    ${filasCat}
+  `;
+  document.getElementById('modal-subir-log').style.display = 'none';
+  document.getElementById('modal-subir-log').textContent = '';
+  document.getElementById('btn-modal-confirm').disabled = false;
+  document.getElementById('btn-modal-confirm').textContent = 'Confirmar y subir';
+  document.getElementById('btn-modal-cancel').textContent = 'Cancelar';
+  document.getElementById('modal-subir').classList.add('show');
+}
+
+function cerrarModalSubir() {
+  document.getElementById('modal-subir').classList.remove('show');
+}
+
+async function confirmarSubir() {
+  const btn = document.getElementById('btn-modal-confirm');
+  const log = document.getElementById('modal-subir-log');
+  btn.disabled = true;
+  btn.textContent = 'Subiendo...';
+  log.style.display = 'block';
+  log.textContent = '';
+
+  const subibles = TODOS.filter(p => !esBaseColorimetrica(p.descripcion));
+  const productos = subibles.map((p, i) => {
+    const obj = {
+      codigo:    p.codigo || `XLS-${String(i).padStart(4,'0')}`,
+      nombre:    p.descripcion,
+      categoria: detectarCategoria(p.descripcion),
+      stock:     Math.trunc(p.stock || 0),
+    };
+    if (p.precio_venta > 0) obj.precio = Number(p.precio_venta);
+    return obj;
+  });
+
+  const batches = [];
+  for (let i = 0; i < productos.length; i += BATCH_SIZE) {
+    batches.push(productos.slice(i, i + BATCH_SIZE));
+  }
+  log.textContent += `Subiendo en ${batches.length} tandas de ${BATCH_SIZE}...\n\n`;
+
+  let totalOk = 0, totalErr = 0;
+  for (let i = 0; i < batches.length; i++) {
+    const batch = batches[i];
+    log.textContent += `Tanda ${i+1}/${batches.length} (${batch.length} productos)... `;
+    log.scrollTop = log.scrollHeight;
+    try {
+      const resp = await fetch(EDGE_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-sync-token': SYNC_TOKEN,
+        },
+        body: JSON.stringify({ productos: batch }),
+      });
+      if (!resp.ok) {
+        const txt = await resp.text();
+        log.textContent += `ERROR HTTP ${resp.status}: ${txt.slice(0,200)}\n`;
+        totalErr += batch.length;
+      } else {
+        const data = await resp.json();
+        const ok = data.insertados ?? data.upserted ?? batch.length;
+        log.textContent += `OK (${ok})\n`;
+        totalOk += batch.length;
+      }
+    } catch (err) {
+      log.textContent += `ERROR: ${err.message}\n`;
+      totalErr += batch.length;
+    }
+    log.scrollTop = log.scrollHeight;
+  }
+
+  log.textContent += `\nResultado: ${totalOk} subidos, ${totalErr} errores\n`;
+  if (totalErr === 0) {
+    log.textContent += `\nTodo subido correctamente.\n`;
+    log.textContent += `Los productos nuevos están con visible=false.\n`;
+    log.textContent += `Activar los que quieras mostrar desde el panel admin.`;
+    mostrarToast('Catálogo actualizado: ' + totalOk + ' productos');
+  } else {
+    mostrarToast('Subida con errores — revisa el log');
+  }
+  log.scrollTop = log.scrollHeight;
+  btn.textContent = 'Cerrar';
+  btn.disabled = false;
+  btn.onclick = () => { cerrarModalSubir(); btn.onclick = confirmarSubir; };
+  document.getElementById('btn-modal-cancel').style.display = 'none';
+}
+</script>
+</body>
+</html>
