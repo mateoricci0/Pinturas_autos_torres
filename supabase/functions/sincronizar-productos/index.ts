@@ -80,7 +80,7 @@ Deno.serve(async (req: Request) => {
   for (let i = 0; i < limpios.length; i += 100) {
     const { error } = await sb.from('productos').upsert(limpios.slice(i, i + 100), { onConflict: 'codigo' });
     if (error) return jsonResp({ error: `Lote ${i}: ${error.message}` }, 500);
-    procesados += lote.length;
+    procesados += limpios.slice(i, i + 100).length;
   }
 
   return jsonResp({ ok: true, procesados, omitidos: omitidos.length });

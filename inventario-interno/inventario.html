@@ -213,8 +213,22 @@ td.stock{text-align:center;font-weight:600}
   letter-spacing:.06em;text-transform:uppercase;padding:5px 10px;border-radius:4px;
   cursor:pointer;white-space:nowrap}
 .btn-logout:hover{background:rgba(255,255,255,0.22)}
+.btn-pass{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);
+  color:rgba(255,255,255,0.75);font-family:var(--head);font-size:8px;font-weight:700;
+  letter-spacing:.06em;text-transform:uppercase;padding:5px 10px;border-radius:4px;
+  cursor:pointer;white-space:nowrap}
+.btn-pass:hover{background:rgba(255,255,255,0.18)}
 .user-email{font-size:11px;color:rgba(255,255,255,0.6);white-space:nowrap;
   max-width:160px;overflow:hidden;text-overflow:ellipsis}
+/* ── MODAL CONTRASEÑA ── */
+.pass-field{margin-bottom:.75rem}
+.pass-field label{display:block;font-size:10px;font-weight:700;font-family:var(--head);
+  letter-spacing:.08em;text-transform:uppercase;color:var(--dg);margin-bottom:4px}
+.pass-field input{width:100%;font-family:var(--body);font-size:13px;
+  border:1.5px solid #ddd;border-radius:6px;padding:10px 12px;
+  outline:none;transition:border-color .15s}
+.pass-field input:focus{border-color:var(--mg)}
+.pass-msg{font-size:12px;text-align:center;margin-top:.5rem;min-height:18px}
 
 @media(max-width:640px){
   .filtros{flex-direction:column}
@@ -258,6 +272,7 @@ td.stock{text-align:center;font-weight:600}
       <span id="autosave-txt">Conectando...</span>
     </div>
     <span class="user-email" id="user-email" style="display:none"></span>
+    <button class="btn-pass" id="btn-pass" style="display:none" onclick="abrirModalPass()">Contraseña</button>
     <button class="btn-logout" id="btn-logout" style="display:none" onclick="cerrarSesion()">Cerrar sesión</button>
   </div>
 </div>
@@ -357,6 +372,26 @@ td.stock{text-align:center;font-weight:600}
     <div class="modal-actions">
       <button class="btn btn-out" onclick="cerrarModalSubir()" id="btn-modal-cancel">Cancelar</button>
       <button class="btn btn-primary" id="btn-modal-confirm" onclick="confirmarSubir()">Confirmar y subir</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Cambiar Contraseña -->
+<div class="modal-bg" id="modal-pass">
+  <div class="modal" style="max-width:380px">
+    <h3>Cambiar contraseña</h3>
+    <div class="pass-field">
+      <label>Nueva contraseña</label>
+      <input type="password" id="pass-nueva" placeholder="Mínimo 6 caracteres" autocomplete="new-password">
+    </div>
+    <div class="pass-field">
+      <label>Confirmar contraseña</label>
+      <input type="password" id="pass-confirm" placeholder="Repite la contraseña" autocomplete="new-password">
+    </div>
+    <div class="pass-msg" id="pass-msg"></div>
+    <div class="modal-actions">
+      <button class="btn btn-out" onclick="cerrarModalPass()">Cancelar</button>
+      <button class="btn btn-primary" id="btn-pass-confirm" onclick="cambiarContrasena()">Guardar</button>
     </div>
   </div>
 </div>
@@ -1184,7 +1219,51 @@ function mostrarPanelLogueado(user) {
   document.getElementById('login-overlay').style.display = 'none';
   document.getElementById('user-email').textContent = user.email;
   document.getElementById('user-email').style.display = '';
+  document.getElementById('btn-pass').style.display = '';
   document.getElementById('btn-logout').style.display = '';
+}
+
+function abrirModalPass() {
+  document.getElementById('pass-nueva').value = '';
+  document.getElementById('pass-confirm').value = '';
+  document.getElementById('pass-msg').textContent = '';
+  document.getElementById('pass-msg').style.color = '';
+  document.getElementById('btn-pass-confirm').disabled = false;
+  document.getElementById('btn-pass-confirm').textContent = 'Guardar';
+  document.getElementById('modal-pass').classList.add('show');
+  document.getElementById('pass-nueva').focus();
+}
+
+function cerrarModalPass() {
+  document.getElementById('modal-pass').classList.remove('show');
+}
+
+async function cambiarContrasena() {
+  const nueva   = document.getElementById('pass-nueva').value;
+  const confirm = document.getElementById('pass-confirm').value;
+  const msg     = document.getElementById('pass-msg');
+  const btn     = document.getElementById('btn-pass-confirm');
+
+  msg.style.color = '#C0392B';
+  if (!nueva || nueva.length < 6) { msg.textContent = 'La contraseña debe tener al menos 6 caracteres.'; return; }
+  if (nueva !== confirm)           { msg.textContent = 'Las contraseñas no coinciden.'; return; }
+
+  btn.disabled = true;
+  btn.textContent = 'Guardando…';
+  msg.textContent = '';
+
+  const { error } = await sb.auth.updateUser({ password: nueva });
+  if (error) {
+    msg.textContent = 'Error: ' + error.message;
+    btn.disabled = false;
+    btn.textContent = 'Guardar';
+  } else {
+    msg.style.color = '#27AE60';
+    msg.textContent = '¡Contraseña actualizada correctamente!';
+    btn.textContent = 'Cerrar';
+    btn.disabled = false;
+    btn.onclick = () => { cerrarModalPass(); btn.onclick = cambiarContrasena; };
+  }
 }
 
 async function iniciarSesion() {
