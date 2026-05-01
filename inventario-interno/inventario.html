@@ -177,6 +177,45 @@ td.stock{text-align:center;font-weight:600}
 .modal-log{background:#0D0D0D;color:#0F0;font-family:monospace;font-size:11px;
   padding:.75rem;border-radius:6px;max-height:200px;overflow:auto;margin-bottom:1rem;white-space:pre-wrap}
 
+/* ── LOGIN ── */
+.login-overlay{
+  position:fixed;inset:0;z-index:500;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--black);padding:1.5rem;
+}
+.login-card{
+  background:var(--white);border:2.5px solid var(--mg);
+  border-radius:14px;padding:2.5rem;
+  width:100%;max-width:340px;
+  box-shadow:6px 6px 0 var(--mg);
+}
+.login-logo{font-family:var(--head);font-size:11px;font-weight:900;
+  margin-bottom:1.5rem;text-align:center;color:var(--black)}
+.login-logo b{background:var(--mg);color:var(--white);padding:2px 8px;margin-right:5px}
+.login-title{font-family:var(--head);font-size:14px;font-weight:900;
+  letter-spacing:-.01em;margin-bottom:1.25rem;text-align:center}
+.login-field{margin-bottom:.75rem}
+.login-field label{display:block;font-size:10px;font-weight:700;font-family:var(--head);
+  letter-spacing:.08em;text-transform:uppercase;color:var(--dg);margin-bottom:4px}
+.login-field input{width:100%;font-family:var(--body);font-size:13px;
+  border:1.5px solid #ddd;border-radius:6px;padding:10px 12px;
+  outline:none;transition:border-color .15s;background:var(--white)}
+.login-field input:focus{border-color:var(--mg)}
+.login-btn{width:100%;background:var(--mg);color:var(--white);font-family:var(--head);
+  font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  padding:12px;border-radius:6px;border:none;cursor:pointer;margin-top:.5rem;
+  transition:background .15s}
+.login-btn:hover{background:var(--mg2)}
+.login-btn:disabled{background:#ccc;cursor:not-allowed}
+.login-err{font-size:12px;color:#C0392B;text-align:center;margin-top:.75rem;min-height:18px}
+.btn-logout{background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);
+  color:var(--white);font-family:var(--head);font-size:8px;font-weight:700;
+  letter-spacing:.06em;text-transform:uppercase;padding:5px 10px;border-radius:4px;
+  cursor:pointer;white-space:nowrap}
+.btn-logout:hover{background:rgba(255,255,255,0.22)}
+.user-email{font-size:11px;color:rgba(255,255,255,0.6);white-space:nowrap;
+  max-width:160px;overflow:hidden;text-overflow:ellipsis}
+
 @media(max-width:640px){
   .filtros{flex-direction:column}
   .f-group{min-width:100%}
@@ -192,6 +231,24 @@ td.stock{text-align:center;font-weight:600}
 </head>
 <body>
 
+<!-- LOGIN OVERLAY -->
+<div class="login-overlay" id="login-overlay">
+  <div class="login-card">
+    <div class="login-logo"><b>PAT</b>Inventario</div>
+    <div class="login-title">Iniciar sesión</div>
+    <div class="login-field">
+      <label>Email</label>
+      <input type="email" id="login-email" placeholder="tu@email.com" autocomplete="email">
+    </div>
+    <div class="login-field">
+      <label>Contraseña</label>
+      <input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <button class="login-btn" id="login-btn" onclick="iniciarSesion()">Entrar</button>
+    <div class="login-err" id="login-err"></div>
+  </div>
+</div>
+
 <div class="top">
   <div class="top-logo"><b>PAT</b>Inventario Interno</div>
   <div class="top-right">
@@ -200,6 +257,8 @@ td.stock{text-align:center;font-weight:600}
       <div class="autosave-dot" id="autosave-dot"></div>
       <span id="autosave-txt">Conectando...</span>
     </div>
+    <span class="user-email" id="user-email" style="display:none"></span>
+    <button class="btn-logout" id="btn-logout" style="display:none" onclick="cerrarSesion()">Cerrar sesión</button>
   </div>
 </div>
 
@@ -1075,11 +1134,13 @@ async function confirmarSubir() {
     log.textContent += `Tanda ${i+1}/${batches.length} (${batch.length} productos)... `;
     log.scrollTop = log.scrollHeight;
     try {
+      const { data: { session: sess } } = await sb.auth.getSession();
       const resp = await fetch(EDGE_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'x-sync-token': SYNC_TOKEN,
+          ...(sess ? { 'Authorization': `Bearer ${sess.access_token}` } : {}),
         },
         body: JSON.stringify({ productos: batch }),
       });
@@ -1115,6 +1176,58 @@ async function confirmarSubir() {
   btn.onclick = () => { cerrarModalSubir(); btn.onclick = confirmarSubir; };
   document.getElementById('btn-modal-cancel').style.display = 'none';
 }
+
+/* ──────────────────────────────────────────────
+   AUTENTICACIÓN (Supabase Auth)
+   ────────────────────────────────────────────── */
+function mostrarPanelLogueado(user) {
+  document.getElementById('login-overlay').style.display = 'none';
+  document.getElementById('user-email').textContent = user.email;
+  document.getElementById('user-email').style.display = '';
+  document.getElementById('btn-logout').style.display = '';
+}
+
+async function iniciarSesion() {
+  const email = document.getElementById('login-email').value.trim();
+  const pass  = document.getElementById('login-pass').value;
+  const btn   = document.getElementById('login-btn');
+  const err   = document.getElementById('login-err');
+
+  if (!email || !pass) { err.textContent = 'Rellena el email y la contraseña.'; return; }
+
+  btn.disabled = true;
+  btn.textContent = 'Entrando…';
+  err.textContent = '';
+
+  const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+
+  if (error) {
+    err.textContent = 'Email o contraseña incorrectos.';
+    btn.disabled = false;
+    btn.textContent = 'Entrar';
+    return;
+  }
+
+  mostrarPanelLogueado(data.user);
+}
+
+async function cerrarSesion() {
+  await sb.auth.signOut();
+  location.reload();
+}
+
+document.getElementById('login-pass').addEventListener('keydown', e => {
+  if (e.key === 'Enter') iniciarSesion();
+});
+document.getElementById('login-email').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('login-pass').focus();
+});
+
+// Restaurar sesión existente al cargar
+(async () => {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) mostrarPanelLogueado(session.user);
+})();
 </script>
 </body>
 </html>
