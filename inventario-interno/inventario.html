@@ -98,6 +98,31 @@ thead th{
   padding:10px 12px;text-align:left;border-bottom:2px solid var(--black);
   position:sticky;top:0;background:var(--white);z-index:5;white-space:nowrap;
 }
+
+/* ── CHECKBOX OFERTA ── */
+.chk-oferta{width:16px;height:16px;accent-color:var(--mg);cursor:pointer}
+td.chk-col{text-align:center;padding:9px 8px}
+thead th.chk-col{text-align:center;padding:10px 8px}
+tr.en-oferta{background:#FFF8E1!important}
+tr.en-oferta:hover{background:#FFF3CD!important}
+
+/* ── MODAL OFERTAS ── */
+.oferta-item{border:1.5px solid #e0e0e0;border-radius:8px;padding:12px;margin-bottom:10px;background:#FAFAFA}
+.oferta-item-name{font-size:12px;font-weight:600;color:var(--black);margin-bottom:8px;line-height:1.4}
+.oferta-row{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+.oferta-field{display:flex;flex-direction:column;gap:3px;flex:1;min-width:110px}
+.oferta-field label{font-size:9px;font-weight:700;font-family:var(--head);letter-spacing:.08em;text-transform:uppercase;color:var(--dg)}
+.oferta-field input[type=number]{font-family:var(--body);font-size:13px;border:1.5px solid #ddd;border-radius:6px;padding:7px 10px;outline:none;transition:border-color .15s;width:100%}
+.oferta-field input[type=number]:focus{border-color:var(--mg)}
+.oferta-precio-orig{font-size:11px;color:#888;padding-bottom:2px}
+.foto-label{display:flex;align-items:center;gap:6px;background:var(--mg3);border:1.5px dashed var(--mg);border-radius:6px;padding:7px 12px;cursor:pointer;font-size:11px;font-weight:600;color:var(--mg);white-space:nowrap;transition:background .15s}
+.foto-label:hover{background:#F0C0D8}
+.foto-label input{display:none}
+.foto-preview{width:48px;height:48px;object-fit:cover;border-radius:6px;border:1.5px solid #ddd;display:none}
+.btn-oferta{background:#FF6B00;color:var(--white)}
+.btn-oferta:hover{background:#E05A00}
+.oferta-count-badge{background:#FF6B00;color:#fff;border-radius:10px;font-size:9px;padding:2px 7px;margin-left:4px;font-family:var(--head);font-weight:700}
+
 tbody tr{border-bottom:1px solid #eee;transition:background .1s}
 tbody tr:hover{background:var(--mg3)}
 td{padding:9px 12px;vertical-align:middle}
@@ -303,6 +328,7 @@ td.stock{text-align:center;font-weight:600}
   <div class="f-actions">
     <button class="btn btn-out" onclick="limpiarFiltros()">Limpiar</button>
     <button class="btn btn-ghost" onclick="abrirCargaXLS()">Cambiar XLS</button>
+    <button class="btn btn-oferta" id="btn-ofertas" onclick="abrirModalOfertas()">★ Ofertas <span class="oferta-count-badge" id="oferta-badge" style="display:none">0</span></button>
     <button class="btn btn-primary" id="btn-subir" onclick="abrirModalSubir()">↑ Subir al catálogo</button>
   </div>
 </div>
@@ -312,6 +338,7 @@ td.stock{text-align:center;font-weight:600}
 <div class="tabla-wrap" id="tabla-wrap">
   <table>
     <thead><tr>
+      <th class="chk-col" title="Añadir a oferta">★</th>
       <th>Código</th>
       <th>Descripción</th>
       <th title="Haz clic en el badge para editar">Marca ✏</th>
@@ -357,6 +384,20 @@ td.stock{text-align:center;font-weight:600}
     <div class="modal-actions">
       <button class="btn btn-out" onclick="cerrarModalSubir()" id="btn-modal-cancel">Cancelar</button>
       <button class="btn btn-primary" id="btn-modal-confirm" onclick="confirmarSubir()">Confirmar y subir</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Ofertas -->
+<div class="modal-bg" id="modal-ofertas">
+  <div class="modal" style="max-width:600px">
+    <h3>★ Subir a Catálogo de Ofertas</h3>
+    <p style="margin-bottom:1rem">Para cada producto seleccionado, introduce el precio de oferta y (opcional) una foto.</p>
+    <div id="ofertas-lista"></div>
+    <div class="modal-log" id="ofertas-log" style="display:none"></div>
+    <div class="modal-actions">
+      <button class="btn btn-out" onclick="cerrarModalOfertas()" id="btn-ofertas-cancel">Cancelar</button>
+      <button class="btn btn-oferta" id="btn-ofertas-confirm" onclick="confirmarSubirOfertas()">★ Publicar ofertas</button>
     </div>
   </div>
 </div>
@@ -937,7 +978,12 @@ function renderTabla(lista) {
       onclick="abrirPopover(event,${p._idx},'tipo')" title="Clic para cambiar el tipo">
       ${escapeHtml(p.tipo)} ${tEdit?lapiz:''}</span>`;
     const vis = !!visibles[p._key];
-    return `<tr>
+    const enOferta = ofertasSeleccionadas.has(p._key);
+    return `<tr class="${enOferta ? 'en-oferta' : ''}">
+      <td class="chk-col">
+        <input type="checkbox" class="chk-oferta" ${enOferta ? 'checked' : ''}
+          onchange="toggleOferta('${escapeHtml(p._key)}',${p._idx},this.checked)" title="Añadir a oferta">
+      </td>
       <td class="codigo">${escapeHtml(p.codigo) || '—'}</td>
       <td class="descripcion">${escapeHtml(p.descripcion)}</td>
       <td>${bMarca}</td>
@@ -1228,6 +1274,174 @@ document.getElementById('login-email').addEventListener('keydown', e => {
   const { data: { session } } = await sb.auth.getSession();
   if (session) mostrarPanelLogueado(session.user);
 })();
+
+/* ──────────────────────────────────────────────
+   CATÁLOGO DE OFERTAS
+   ────────────────────────────────────────────── */
+let ofertasSeleccionadas = new Map(); // key → { idx, producto }
+const BUCKET_FOTOS = 'ofertas-fotos';
+
+function toggleOferta(key, idx, checked) {
+  if (checked) {
+    ofertasSeleccionadas.set(key, { idx, producto: TODOS[idx] });
+  } else {
+    ofertasSeleccionadas.delete(key);
+  }
+  actualizarBadgeOfertas();
+  // Actualizar clase de la fila sin re-renderizar toda la tabla
+  const fila = document.querySelector(`input.chk-oferta[onchange*="'${key}'"]`)?.closest('tr');
+  if (fila) fila.className = checked ? 'en-oferta' : '';
+}
+
+function actualizarBadgeOfertas() {
+  const n = ofertasSeleccionadas.size;
+  const badge = document.getElementById('oferta-badge');
+  badge.textContent = n;
+  badge.style.display = n > 0 ? '' : 'none';
+}
+
+function abrirModalOfertas() {
+  if (!ofertasSeleccionadas.size) {
+    mostrarToast('Marca con ★ los productos que quieras poner en oferta');
+    return;
+  }
+
+  const lista = document.getElementById('ofertas-lista');
+  lista.innerHTML = [...ofertasSeleccionadas.entries()].map(([key, { producto: p }]) => {
+    const precioOrig = p.precio_venta > 0
+      ? p.precio_venta.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €'
+      : '—';
+    return `
+      <div class="oferta-item" data-key="${escapeHtml(key)}">
+        <div class="oferta-item-name">${escapeHtml(p.descripcion)}</div>
+        <div class="oferta-row">
+          <div class="oferta-field">
+            <label>Precio original</label>
+            <div class="oferta-precio-orig">${precioOrig}</div>
+          </div>
+          <div class="oferta-field">
+            <label>Precio oferta (€) *</label>
+            <input type="number" class="oferta-precio-input" min="0" step="0.01"
+              placeholder="0.00" data-key="${escapeHtml(key)}">
+          </div>
+          <div class="oferta-field" style="flex:0">
+            <label>Foto</label>
+            <div style="display:flex;align-items:center;gap:8px">
+              <label class="foto-label">
+                📷 Añadir foto
+                <input type="file" class="foto-input" accept="image/*" capture="environment"
+                  data-key="${escapeHtml(key)}" onchange="previsualizarFoto(this,'${escapeHtml(key)}')">
+              </label>
+              <img class="foto-preview" id="foto-prev-${escapeHtml(key)}" alt="preview">
+            </div>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+
+  document.getElementById('ofertas-log').style.display = 'none';
+  document.getElementById('ofertas-log').textContent = '';
+  document.getElementById('btn-ofertas-confirm').disabled = false;
+  document.getElementById('btn-ofertas-confirm').textContent = '★ Publicar ofertas';
+  document.getElementById('btn-ofertas-cancel').style.display = '';
+  document.getElementById('modal-ofertas').classList.add('show');
+}
+
+function previsualizarFoto(input, key) {
+  const file = input.files[0];
+  if (!file) return;
+  const prev = document.getElementById('foto-prev-' + key);
+  prev.src = URL.createObjectURL(file);
+  prev.style.display = 'block';
+}
+
+function cerrarModalOfertas() {
+  document.getElementById('modal-ofertas').classList.remove('show');
+}
+
+async function confirmarSubirOfertas() {
+  const btn = document.getElementById('btn-ofertas-confirm');
+  const log = document.getElementById('ofertas-log');
+  btn.disabled = true;
+  btn.textContent = 'Subiendo...';
+  log.style.display = 'block';
+  log.textContent = '';
+
+  const { data: { session: sess } } = await sb.auth.getSession();
+  if (!sess) {
+    log.textContent = 'ERROR: Debes estar autenticada para subir ofertas.';
+    btn.disabled = false;
+    btn.textContent = '★ Publicar ofertas';
+    return;
+  }
+
+  let ok = 0, errores = 0;
+
+  for (const [key, { producto: p }] of ofertasSeleccionadas.entries()) {
+    const precioInput = document.querySelector(`.oferta-precio-input[data-key="${key}"]`);
+    const fotoInput   = document.querySelector(`.foto-input[data-key="${key}"]`);
+    const precioOferta = parseFloat(precioInput?.value);
+
+    if (!precioInput || isNaN(precioOferta) || precioOferta <= 0) {
+      log.textContent += `✗ ${p.descripcion.slice(0,40)}... — falta el precio de oferta\n`;
+      errores++;
+      continue;
+    }
+
+    log.textContent += `→ ${p.descripcion.slice(0, 40)}...\n`;
+    log.scrollTop = log.scrollHeight;
+
+    let foto_url = null;
+
+    // Subir foto si hay
+    if (fotoInput?.files[0]) {
+      const file = fotoInput.files[0];
+      const ext  = file.name.split('.').pop().toLowerCase();
+      const path = `${key.replace(/[^a-zA-Z0-9_-]/g,'_')}_${Date.now()}.${ext}`;
+      const { error: upErr } = await sb.storage.from(BUCKET_FOTOS).upload(path, file, {
+        upsert: true, contentType: file.type
+      });
+      if (upErr) {
+        log.textContent += `  ⚠ Foto no subida: ${upErr.message}\n`;
+      } else {
+        const { data: urlData } = sb.storage.from(BUCKET_FOTOS).getPublicUrl(path);
+        foto_url = urlData.publicUrl;
+        log.textContent += `  ✓ Foto subida\n`;
+      }
+    }
+
+    // Upsert en tabla ofertas
+    const registro = {
+      codigo:          p.codigo || key,
+      nombre:          p.descripcion,
+      precio_original: p.precio_venta > 0 ? p.precio_venta : null,
+      precio_oferta:   precioOferta,
+      visible:         true,
+      updated_at:      new Date().toISOString(),
+    };
+    if (foto_url) registro.foto_url = foto_url;
+
+    const { error: dbErr } = await sb.from('ofertas').upsert(registro, { onConflict: 'codigo' });
+    if (dbErr) {
+      log.textContent += `  ✗ Error BD: ${dbErr.message}\n`;
+      errores++;
+    } else {
+      log.textContent += `  ✓ Publicado en oferta\n`;
+      ok++;
+    }
+    log.scrollTop = log.scrollHeight;
+  }
+
+  log.textContent += `\nResultado: ${ok} publicados, ${errores} errores\n`;
+  if (errores === 0) mostrarToast(`${ok} oferta${ok!==1?'s':''} publicadas correctamente`);
+  else mostrarToast('Subida con algunos errores — revisa el log');
+
+  btn.textContent = 'Cerrar';
+  btn.disabled = false;
+  btn.onclick = () => { cerrarModalOfertas(); btn.onclick = confirmarSubirOfertas; };
+  document.getElementById('btn-ofertas-cancel').style.display = 'none';
+  log.scrollTop = log.scrollHeight;
+}
 </script>
 </body>
 </html>

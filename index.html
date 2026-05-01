@@ -125,6 +125,26 @@ nav{background:var(--black);padding:0 1.5rem;height:58px;display:flex;align-item
 .brand-name{font-family:var(--head);font-size:9px;font-weight:700;color:var(--black);text-align:center;line-height:1.3}
 .brand-type{font-size:9px;color:var(--dg);text-align:center}
 
+/* OFERTAS */
+.ofertas-sec{background:var(--black);border-top:3px solid var(--mg);border-bottom:3px solid var(--mg);padding:0 0 2rem}
+.ofertas-header{background:var(--mg);padding:1.2rem 1.5rem}
+.ofertas-header-inner{display:flex;align-items:baseline;gap:1rem}
+.ofertas-eyebrow{font-family:var(--head);font-size:8px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:rgba(255,255,255,0.6)}
+.ofertas-title{font-family:var(--head);font-size:22px;font-weight:900;letter-spacing:-0.02em;color:var(--white)}
+.ofertas-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;padding:1.5rem}
+.oferta-card{background:var(--white);border:2px solid var(--mg);border-radius:8px;overflow:hidden;position:relative;transition:transform .15s,box-shadow .15s}
+.oferta-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(181,0,106,0.25)}
+.oferta-badge{position:absolute;top:10px;left:10px;background:var(--mg);color:var(--white);font-family:var(--head);font-size:8px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:3px;z-index:2}
+.oferta-img{width:100%;height:140px;object-fit:cover;display:block}
+.oferta-img-placeholder{width:100%;height:140px;background:var(--mg3);display:flex;align-items:center;justify-content:center;font-size:3rem}
+.oferta-body{padding:12px}
+.oferta-nombre{font-family:var(--head);font-size:10px;font-weight:700;color:var(--black);margin-bottom:8px;line-height:1.4}
+.oferta-precios{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.oferta-precio-orig{font-size:12px;color:#999;text-decoration:line-through}
+.oferta-precio-nuevo{font-family:var(--head);font-size:16px;font-weight:900;color:var(--mg)}
+.oferta-ahorro{font-size:10px;color:#27AE60;font-weight:600;margin-top:4px}
+.ofertas-empty{grid-column:1/-1;text-align:center;padding:2rem;color:rgba(255,255,255,0.4);font-size:13px;display:none}
+
 /* CATALOGUE */
 .cat-sec{padding:2rem 1.5rem;background:var(--offwhite)}
 .cat-header{display:flex;align-items:baseline;gap:1rem;margin-bottom:1rem;border-bottom:3px solid var(--black);padding-bottom:.8rem}
@@ -225,6 +245,13 @@ footer p{font-family:var(--head);font-size:8px;font-weight:700;letter-spacing:0.
   .brand-name{font-size:8px}
   .brand-type{font-size:8px}
 
+  /* Ofertas */
+  .ofertas-grid{grid-template-columns:repeat(2,1fr);gap:8px;padding:1rem}
+  .oferta-img,.oferta-img-placeholder{height:110px}
+  .oferta-body{padding:10px}
+  .oferta-nombre{font-size:9px}
+  .oferta-precio-nuevo{font-size:14px}
+
   /* Catálogo */
   .cat-sec{padding:1.5rem 1rem}
   .tabs{gap:5px}
@@ -270,6 +297,7 @@ footer p{font-family:var(--head);font-size:8px;font-weight:700;letter-spacing:0.
     <img src="logo letras verdes.JPG" class="nav-logo" alt="Pinturas Autos Torres">
   </div>
   <ul class="navl">
+    <li><a href="#ofertas" style="color:#FF9500">★ Ofertas</a></li>
     <li><a href="#cat">Catálogo</a></li>
     <li><a href="#ct">Contacto</a></li>
   </ul>
@@ -337,6 +365,17 @@ footer p{font-family:var(--head);font-size:8px;font-weight:700;letter-spacing:0.
     <div class="brand-card"><div class="brand-icon">📦</div><div class="brand-name">Indasa</div><div class="brand-type">Lijas</div></div>
     <div class="brand-card"><div class="brand-icon">🧴</div><div class="brand-name">Aiwarita</div><div class="brand-type">Desengrasantes</div></div>
   </div>
+</section>
+
+<!-- SECCIÓN OFERTAS -->
+<section class="ofertas-sec" id="ofertas">
+  <div class="ofertas-header">
+    <div class="ofertas-header-inner">
+      <div class="ofertas-eyebrow">Tiempo limitado</div>
+      <h2 class="ofertas-title">★ OFERTAS</h2>
+    </div>
+  </div>
+  <div class="ofertas-grid" id="ofertas-grid"></div>
 </section>
 
 <section class="cat-sec" id="cat">
@@ -441,6 +480,54 @@ const ICONOS = {
 let todosLosProductos = [];
 let categoriaActual = 'todos';
 
+// ── CARGAR OFERTAS ──
+async function cargarOfertas() {
+  const { data, error } = await sb
+    .from('ofertas')
+    .select('*')
+    .eq('visible', true)
+    .order('updated_at', { ascending: false });
+
+  const grid = document.getElementById('ofertas-grid');
+  const sec  = document.getElementById('ofertas');
+
+  if (error || !data || !data.length) {
+    sec.style.display = 'none';
+    return;
+  }
+
+  sec.style.display = '';
+  grid.innerHTML = data.map(o => {
+    const foto = o.foto_url
+      ? `<img class="oferta-img" src="${o.foto_url}" alt="${escHtml(o.nombre)}" loading="lazy">`
+      : `<div class="oferta-img-placeholder">🏷️</div>`;
+    const precioNuevo = Number(o.precio_oferta).toFixed(2).replace('.',',') + ' €';
+    const precioOrig  = o.precio_original
+      ? `<span class="oferta-precio-orig">${Number(o.precio_original).toFixed(2).replace('.',',')} €</span>`
+      : '';
+    const ahorro = o.precio_original && o.precio_original > o.precio_oferta
+      ? `<div class="oferta-ahorro">Ahorras ${(Number(o.precio_original) - Number(o.precio_oferta)).toFixed(2).replace('.',',')} €</div>`
+      : '';
+    return `
+      <div class="oferta-card">
+        <div class="oferta-badge">OFERTA</div>
+        ${foto}
+        <div class="oferta-body">
+          <div class="oferta-nombre">${escHtml(o.nombre)}</div>
+          <div class="oferta-precios">
+            ${precioOrig}
+            <span class="oferta-precio-nuevo">${precioNuevo}</span>
+          </div>
+          ${ahorro}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function escHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
 // ── CARGAR PRODUCTOS DESDE SUPABASE ──
 async function cargarProductos() {
   const grid = document.getElementById('grid');
@@ -500,6 +587,7 @@ function filter(cat, btn) {
 }
 
 // Arrancar
+cargarOfertas();
 cargarProductos();
 
 // ── FORMULARIO → WHATSAPP ──
