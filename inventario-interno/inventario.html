@@ -360,7 +360,6 @@ td.stock{text-align:center;font-weight:600}
       <th onclick="ordenarPor('stock-asc')" style="cursor:pointer">Stock ↕</th>
       <th onclick="ordenarPor('costo-desc')" style="cursor:pointer;color:#888" title="Precio de costo (uso interno)">P. Costo ↕</th>
       <th onclick="ordenarPor('precio-desc')" style="cursor:pointer">P. Venta ↕</th>
-      <th title="Visible en el catálogo web" style="text-align:center">Web ✓</th>
     </tr></thead>
     <tbody id="tabla-body"></tbody>
   </table>
@@ -826,22 +825,15 @@ async function cargarCorrecciones() {
       correcciones[row.codigo] = { marca: row.marca, tipo: row.tipo };
     });
     localStorage.setItem(LS_KEY, JSON.stringify(correcciones));
-    visibles = {};
-    (visResp.data || []).forEach(row => { visibles[row.codigo] = !!row.visible; });
     setIndicador('ok');
   } catch (err) {
     console.warn('Sin conexión con Supabase:', err.message);
     try { correcciones = JSON.parse(localStorage.getItem(LS_KEY) || '{}'); } catch(e) {}
-    visibles = {};
     setIndicador('offline');
   }
   aplicarCorreccionesADatos();
   poblarSelects();
   aplicarFiltros();
-}
-
-function toggleVisible(key, checked) {
-  visibles[key] = checked;
 }
 
 async function guardarCorreccion(key, marca, tipo) {
@@ -993,7 +985,6 @@ function renderTabla(lista) {
     const bTipo = `<span class="badge ${badgeClass(p.tipo,'tipo')}${tEdit?' badge-editado':''}"
       onclick="abrirPopover(event,${p._idx},'tipo')" title="Clic para cambiar el tipo">
       ${escapeHtml(p.tipo)} ${tEdit?lapiz:''}</span>`;
-    const vis = !!visibles[p._key];
     const enOferta = ofertasSeleccionadas.has(p._key);
     return `<tr class="${enOferta ? 'en-oferta' : ''}">
       <td class="chk-col">
@@ -1007,12 +998,6 @@ function renderTabla(lista) {
       <td class="stock"><span class="${stockClass(p.stock)}">${p.stock}</span></td>
       <td class="precio-costo">${costoStr}</td>
       <td class="precio">${precioStr}</td>
-      <td class="toggle-wrap">
-        <label class="toggle">
-          <input type="checkbox" ${vis ? 'checked' : ''} onchange="toggleVisible('${escapeHtml(p._key)}',this.checked)">
-          <span class="toggle-sl"></span>
-        </label>
-      </td>
     </tr>`;
   }).join('');
 }

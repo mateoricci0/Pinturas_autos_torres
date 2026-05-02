@@ -298,7 +298,6 @@ footer p{font-family:var(--head);font-size:8px;font-weight:700;letter-spacing:0.
   </div>
   <ul class="navl">
     <li><a href="#ofertas" style="color:#FF9500">★ Ofertas</a></li>
-    <li><a href="#cat">Catálogo</a></li>
     <li><a href="#ct">Contacto</a></li>
   </ul>
 </nav>
@@ -313,7 +312,6 @@ footer p{font-family:var(--head);font-size:8px;font-weight:700;letter-spacing:0.
       <h1>ESPECIALISTAS<br>EN PINTURA<br>DE <span class="accent">CARROCERÍA</span></h1>
       <p>Abrimos en abril de 2022 con personal especializado en pintura de carrocería. Pinturas, maquinaria y productos profesionales para taller y particular. Preparamos el color de tu coche en spray.</p>
       <div class="hero-btns">
-        <a class="btn-mg" href="#cat">Ver catálogo →</a>
         <button class="btn-out" onclick="document.getElementById('ct').scrollIntoView({behavior:'smooth'})">Contactar</button>
       </div>
     </div>
@@ -378,17 +376,7 @@ footer p{font-family:var(--head);font-size:8px;font-weight:700;letter-spacing:0.
   <div class="ofertas-grid" id="ofertas-grid"></div>
 </section>
 
-<section class="cat-sec" id="cat">
-  <div class="cat-header"><h2>CATÁLOGO</h2></div>
-  <div class="tabs">
-    <button class="tab on" onclick="filter('todos',this)">Todos</button>
-    <button class="tab" onclick="filter('pinturas',this)">Pinturas</button>
-    <button class="tab" onclick="filter('barnices',this)">Barnices</button>
-    <button class="tab" onclick="filter('herramientas',this)">Herramientas</button>
-    <button class="tab" onclick="filter('accesorios',this)">Accesorios</button>
-  </div>
-  <div class="grid" id="grid"></div>
-</section>
+
 
 <div class="wa">
   <p>¿No encuentras lo que buscas?<span>Llámanos o escríbenos por WhatsApp</span></p>
@@ -528,67 +516,8 @@ function escHtml(s) {
   return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
-// ── CARGAR PRODUCTOS DESDE SUPABASE ──
-async function cargarProductos() {
-  const grid = document.getElementById('grid');
-  grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:2rem;color:var(--dg);font-size:13px">Cargando catálogo...</div>`;
-
-  const { data, error } = await sb
-    .from('productos')
-    .select('*')
-    .eq('visible', true)
-    .order('categoria')
-    .order('nombre');
-
-  if (error) {
-    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:2rem;color:#C0392B;font-size:13px">Error al cargar el catálogo. Inténtalo más tarde.</div>`;
-    console.error('Supabase error:', error);
-    return;
-  }
-
-  todosLosProductos = data;
-  renderGrid(categoriaActual);
-}
-
-// ── RENDERIZAR TARJETAS ──
-function renderGrid(cat) {
-  const grid = document.getElementById('grid');
-  const lista = cat === 'todos'
-    ? todosLosProductos
-    : todosLosProductos.filter(p => p.categoria === cat);
-
-  if (!lista.length) {
-    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:2rem;color:var(--dg);font-size:13px">No hay productos en esta categoría.</div>`;
-    return;
-  }
-
-  grid.innerHTML = lista.map(p => {
-    const icono = p.foto_url
-      ? `<img src="${p.foto_url}" alt="${p.nombre}" style="width:100%;height:80px;object-fit:cover;border-radius:4px;margin-bottom:8px">`
-      : `<span class="card-ico">${ICONOS[p.categoria] || '📦'}</span>`;
-    const precio = p.precio ? `<div style="font-family:var(--head);font-size:13px;font-weight:700;color:var(--mg);margin-bottom:6px">${Number(p.precio).toFixed(2)} €</div>` : '';
-    return `
-      <div class="card">
-        ${icono}
-        <div class="card-name">${p.nombre}</div>
-        ${precio}
-        <div class="card-desc">${p.descripcion || ''}</div>
-        <span class="card-pill">${p.categoria}</span>
-      </div>`;
-  }).join('');
-}
-
-// ── FILTRAR POR CATEGORÍA ──
-function filter(cat, btn) {
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
-  btn.classList.add('on');
-  categoriaActual = cat;
-  renderGrid(cat);
-}
-
 // Arrancar
 cargarOfertas();
-cargarProductos();
 
 // ── FORMULARIO → WHATSAPP ──
 function enviarWA() {
