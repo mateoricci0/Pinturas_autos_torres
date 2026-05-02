@@ -148,6 +148,9 @@ td.stock{text-align:center;font-weight:600}
 .stock-0{color:#C0392B;font-weight:700}
 .stock-low{color:#E67E22;font-weight:700}
 .stock-ok{color:#27AE60}
+.btn-eliminar{background:none;border:none;cursor:pointer;color:#ccc;font-size:15px;
+  padding:4px 6px;border-radius:4px;transition:color .15s,background .15s;line-height:1}
+.btn-eliminar:hover{color:#C0392B;background:#FEE}
 
 /* ── POPOVER ── */
 .popover{
@@ -361,6 +364,7 @@ td.stock{text-align:center;font-weight:600}
       <th onclick="ordenarPor('stock-asc')" style="cursor:pointer">Stock ↕</th>
       <th onclick="ordenarPor('costo-desc')" style="cursor:pointer;color:#888" title="Precio de costo (uso interno)">P. Costo ↕</th>
       <th onclick="ordenarPor('precio-desc')" style="cursor:pointer">P. Venta ↕</th>
+      <th style="text-align:center;width:40px"></th>
     </tr></thead>
     <tbody id="tabla-body"></tbody>
   </table>
@@ -455,7 +459,7 @@ const MARCAS = [
   ["Metabo",        ["METABO"]],
   ["Besa",          ["BESA"]],
   ["Dismoer",       ["DISMOER"]],
-  ["Airum",         ["AIRUM"]],
+  ["Airum",         ["AIRUM","AUARITA"]],
   ["Felton",        ["FELTON"]],
   ["Bryll",         ["BRYLL"]],
   ["Kenda",         ["KENDA","CROMAUTO"]],
@@ -677,6 +681,7 @@ function detectarCategoria(desc) {
 let TODOS_ORIG = [];      // productos tal como salen del XLS
 let TODOS = [];           // con correcciones aplicadas
 let correcciones = {};    // { codigo: { marca, tipo } }
+let eliminados = new Set(); // codigos marcados como eliminados
 let visibles = {};        // { key: boolean } — visible en catálogo web
 let MARCAS_BASE = [];
 let TIPOS_BASE = [];
@@ -834,13 +839,15 @@ function claveProducto(p) {
 }
 
 function aplicarCorreccionesADatos() {
-  TODOS = TODOS_ORIG.map((p, i) => {
-    const key = claveProducto(p);
-    const c = correcciones[key] || {};
-    return { ...p, _idx: i, _key: key,
-             marca: c.marca ?? p.marca,
-             tipo:  normalizarTipo(c.tipo  ?? p.tipo) };
-  });
+  TODOS = TODOS_ORIG
+    .filter(p => !eliminados.has(claveProducto(p)))
+    .map((p, i) => {
+      const key = claveProducto(p);
+      const c = correcciones[key] || {};
+      return { ...p, _idx: i, _key: key,
+               marca: c.marca ?? p.marca,
+               tipo:  normalizarTipo(c.tipo  ?? p.tipo) };
+    });
 }
 
 async function cargarCorrecciones() {
@@ -852,7 +859,9 @@ async function cargarCorrecciones() {
     ]);
     if (corrResp.error) throw corrResp.error;
     correcciones = {};
+    eliminados = new Set();
     (corrResp.data || []).forEach(row => {
+      if (row.eliminado) { eliminados.add(row.codigo); return; }
       correcciones[row.codigo] = { marca: row.marca, tipo: normalizarTipo(row.tipo) };
     });
     localStorage.setItem(LS_KEY, JSON.stringify(correcciones));
@@ -903,6 +912,23 @@ function setIndicador(estado) {
   } else {
     dot.classList.add('offline');
     txt.textContent = 'Sin conexión — guardado local';
+  }
+}
+
+async function eliminarProducto(key) {
+  eliminados.add(key);
+  delete correcciones[key];
+  aplicarCorreccionesADatos();
+  poblarSelects();
+  aplicarFiltros();
+  mostrarToast('Producto eliminado del inventario.');
+  try {
+    await sb.from(TABLA).upsert(
+      { codigo: key, eliminado: true, actualizado_at: new Date().toISOString() },
+      { onConflict: 'codigo' }
+    );
+  } catch (err) {
+    console.warn('No se pudo guardar eliminado en Supabase:', err.message);
   }
 }
 
@@ -1029,6 +1055,9 @@ function renderTabla(lista) {
       <td class="stock"><span class="${stockClass(p.stock)}">${p.stock}</span></td>
       <td class="precio-costo">${costoStr}</td>
       <td class="precio">${precioStr}</td>
+      <td style="text-align:center">
+        <button class="btn-eliminar" onclick="eliminarProducto('${escapeHtml(p._key)}')" title="Eliminar del inventario">✕</button>
+      </td>
     </tr>`;
   }).join('');
 }
@@ -1567,11 +1596,11 @@ async function confirmarSubirOfertas() {
 async function clasificarConIA() {
   const btn = document.getElementById('btn-ia');
   
-  // Clasificar todos los productos del XLS
-  const payload = TODOS.map(p => ({
-    id: p._key,
-    desc: p.descripcion
-  }));
+  // Clasificar todos los productos excepto bases colorimétricas
+  // (son materia prima interna, no stock de tienda)
+  const payload = TODOS
+    .filter(p => !esBaseColorimetrica(p.descripcion))
+    .map(p => ({ id: p._key, desc: p.descripcion }));
 
   if (payload.length === 0) {
     mostrarToast('Carga primero un XLS.');
