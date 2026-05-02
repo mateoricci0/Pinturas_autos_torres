@@ -1541,10 +1541,10 @@ async function confirmarSubirOfertas() {
 async function clasificarConIA() {
   const btn = document.getElementById('btn-ia');
   
-  // Buscar productos sin clasificar o sin marca
-  const aClasificar = TODOS.filter(p => p.marca === 'Sin marca' || p.tipo === 'Sin clasificar');
+  // Buscar productos que NO tengan una corrección manual o de IA previa guardada
+  const aClasificar = TODOS.filter(p => !correcciones[p._key]);
   if (aClasificar.length === 0) {
-    mostrarToast('No hay productos pendientes de clasificar');
+    mostrarToast('Todos los productos de este XLS ya han sido clasificados y guardados.');
     return;
   }
 
@@ -1554,49 +1554,64 @@ async function clasificarConIA() {
     desc: p.descripcion
   }));
 
-  if (!confirm(`Se enviarán ${payload.length} productos a la Inteligencia Artificial para clasificarlos. ¿Continuar?`)) return;
+  if (!confirm(`Se enviarán ${payload.length} productos a la Inteligencia Artificial para revisarlos y clasificarlos de forma precisa. ¿Continuar?`)) return;
 
   btn.disabled = true;
   const textoOrig = btn.innerHTML;
-  btn.innerHTML = '✨ Clasificando...';
 
   try {
     const { data: { session } } = await sb.auth.getSession();
     const token = session ? session.access_token : SB_KEY;
 
-    const res = await fetch(SB_URL + '/functions/v1/clasificador-ia', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({ productos: payload })
-    });
-
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.error || 'Error en la respuesta de la IA');
-    }
-
-    const { resultados } = await res.json();
-    
-    if (!resultados || !Array.isArray(resultados)) {
-      throw new Error('Formato de respuesta inválido de la IA');
-    }
-
     let guardados = 0;
-    for (const r of resultados) {
-      if (r.marca && r.tipo) {
-        await guardarCorreccion(r.id, r.marca, r.tipo);
-        guardados++;
+    const BATCH_SIZE = 50; // Procesar de 50 en 50 para no saturar DeepSeek
+
+    for (let i = 0; i < payload.length; i += BATCH_SIZE) {
+      const lote = payload.slice(i, i + BATCH_SIZE);
+      btn.innerHTML = `✨ IA... (${i + lote.length}/${payload.length})`;
+
+      const res = await fetch(SB_URL + '/functions/v1/clasificador-ia', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ productos: lote })
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        console.error("Error lote:", err);
+        mostrarToast('Hubo un error con un lote, continuando con el resto...');
+        continue;
+      }
+
+      const { resultados } = await res.json();
+      
+      if (resultados && Array.isArray(resultados)) {
+        const upserts = [];
+        for (const r of resultados) {
+          if (r.marca && r.tipo) {
+            correcciones[r.id] = { marca: r.marca, tipo: r.tipo };
+            upserts.push({ codigo: r.id, marca: r.marca, tipo: r.tipo, actualizado_at: new Date().toISOString() });
+            guardados++;
+          }
+        }
+        
+        // Guardar lote en Supabase de golpe
+        if (upserts.length > 0) {
+          await sb.from(TABLA).upsert(upserts, { onConflict: 'codigo' });
+          localStorage.setItem(LS_KEY, JSON.stringify(correcciones));
+        }
       }
     }
 
     aplicarCorreccionesADatos();
     poblarSelects();
     aplicarFiltros();
+    setIndicador('ok');
 
-    mostrarToast(`✨ IA clasificó y guardó ${guardados} productos.`);
+    mostrarToast(`✨ IA revisó y guardó ${guardados} productos exitosamente.`);
 
   } catch (err) {
     console.error(err);
