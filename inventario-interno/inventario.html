@@ -502,7 +502,6 @@ function esBaseColorimetrica(desc) {
 
 // Mapeo de valores legacy (anteriores a la reducción de categorías)
 const TIPO_LEGACY_MAP = {
-  "Base colorimétrica":     "Pintura / Barniz",
   "Spray aerosol":          "Pintura / Barniz",
   "Barniz":                 "Pintura / Barniz",
   "Fondo / Imprimacion":    "Pintura / Barniz",
@@ -519,6 +518,7 @@ const TIPO_LEGACY_MAP = {
   "Pulimento / Abrillantado": "Consumible",
   "Limpieza":               "Consumible",
   "Herramienta":            "Consumible",
+  // Base colorimétrica se mantiene como tipo propio, no se mapea
 };
 
 function normalizarTipo(t) {
@@ -639,7 +639,7 @@ const TIPOS = [
 ];
 
 function detectarTipo(desc) {
-  if (esBaseColorimetrica(desc)) return "Pintura / Barniz";
+  if (esBaseColorimetrica(desc)) return "Base colorimétrica";
   const d = (desc || "").toUpperCase();
   for (const [nombre, palabras] of TIPOS) {
     for (const p of palabras) {
@@ -681,6 +681,7 @@ function detectarCategoria(desc) {
 let TODOS_ORIG = [];      // productos tal como salen del XLS
 let TODOS = [];           // con correcciones aplicadas
 let correcciones = {};    // { codigo: { marca, tipo } }
+let manuales = new Set(); // codigos con clasificación manual (la IA no puede tocarlos)
 let visibles = {};        // { key: boolean } — visible en catálogo web
 let MARCAS_BASE = [];
 let TIPOS_BASE = [];
@@ -896,14 +897,16 @@ async function cargarCorrecciones() {
   setIndicador('cargando');
   try {
     const [corrResp, visResp] = await Promise.all([
-      sb.from(TABLA).select('codigo,marca,tipo'),
+      sb.from(TABLA).select('codigo,marca,tipo,fuente'),
       sb.from('productos').select('codigo,visible'),
     ]);
     if (corrResp.error) throw corrResp.error;
     correcciones = {};
+    manuales = new Set();
     (corrResp.data || []).forEach(row => {
       if (row.eliminado) return;
       correcciones[row.codigo] = { marca: row.marca, tipo: normalizarTipo(row.tipo) };
+      if (row.fuente === 'manual') manuales.add(row.codigo);
     });
     localStorage.setItem(LS_KEY, JSON.stringify(correcciones));
     setIndicador('ok');
@@ -920,8 +923,9 @@ async function cargarCorrecciones() {
 async function guardarCorreccion(key, marca, tipo) {
   setIndicador('guardando');
   try {
+    manuales.add(key);
     const { error } = await sb.from(TABLA).upsert(
-      { codigo: key, marca, tipo, actualizado_at: new Date().toISOString() },
+      { codigo: key, marca, tipo, fuente: 'manual', actualizado_at: new Date().toISOString() },
       { onConflict: 'codigo' }
     );
     if (error) throw error;
@@ -1637,21 +1641,16 @@ async function confirmarSubirOfertas() {
   log.scrollTop = log.scrollHeight;
 }
 
-// ── CLASIFICACIÓN CON IA ──
+// ── CLASIFICACIÓN ──
 async function clasificarConIA() {
   const btn = document.getElementById('btn-ia');
-  
-  // Clasificar todos los productos excepto bases colorimétricas
-  // (son materia prima interna, no stock de tienda)
-  const payload = TODOS
-    .filter(p => !esBaseColorimetrica(p.descripcion))
-    .map(p => ({ id: p._key, desc: p.descripcion }));
 
-  if (payload.length === 0) {
+  if (TODOS.length === 0) {
     mostrarToast('Carga primero un XLS.');
     return;
   }
 
+  const total = TODOS.length;
   btn.disabled = true;
   const textoOrig = btn.innerHTML;
 
@@ -1660,41 +1659,58 @@ async function clasificarConIA() {
     const token = session ? session.access_token : SB_KEY;
 
     let guardados = 0;
-    const BATCH_SIZE = 25; // Procesar de 25 en 25 para no saturar DeepSeek y evitar timeouts
+    let procesados = 0;
+    const BATCH_SIZE = 25;
+
+    // 1. Auto-clasificar bases colorimétricas sin llamar a la IA
+    const basesUpserts = [];
+    for (const p of TODOS) {
+      if (!esBaseColorimetrica(p.descripcion)) continue;
+      if (manuales.has(p._key)) continue; // respetar manuales
+      correcciones[p._key] = { marca: p.marca, tipo: 'Base colorimétrica' };
+      basesUpserts.push({
+        codigo: p._key, marca: p.marca, tipo: 'Base colorimétrica',
+        fuente: 'ia', actualizado_at: new Date().toISOString()
+      });
+      guardados++;
+    }
+    if (basesUpserts.length > 0) {
+      for (let i = 0; i < basesUpserts.length; i += 200)
+        await sb.from(TABLA).upsert(basesUpserts.slice(i, i + 200), { onConflict: 'codigo' });
+    }
+    procesados += basesUpserts.length;
+    btn.innerHTML = `✨ (${procesados}/${total})`;
+
+    // 2. Clasificar el resto con la IA (saltando manuales)
+    const payload = TODOS
+      .filter(p => !esBaseColorimetrica(p.descripcion) && !manuales.has(p._key))
+      .map(p => ({ id: p._key, desc: p.descripcion }));
 
     for (let i = 0; i < payload.length; i += BATCH_SIZE) {
       const lote = payload.slice(i, i + BATCH_SIZE);
-      btn.innerHTML = `✨ IA... (${i + lote.length}/${payload.length})`;
+      procesados += lote.length;
+      btn.innerHTML = `✨ (${procesados}/${total})`;
 
       const res = await fetch(SB_URL + '/functions/v1/clasificador-ia', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ productos: lote })
       });
 
-      if (!res.ok) {
-        const err = await res.json();
-        console.error("Error lote:", err);
-        mostrarToast('Hubo un error con un lote, continuando con el resto...');
-        continue;
-      }
+      if (!res.ok) { console.error("Error lote:", await res.json()); continue; }
 
       const { resultados } = await res.json();
-      
+
       if (resultados && Array.isArray(resultados)) {
         const upserts = [];
         for (const r of resultados) {
           if (r.marca && r.tipo) {
             correcciones[r.id] = { marca: r.marca, tipo: r.tipo };
-            upserts.push({ codigo: r.id, marca: r.marca, tipo: r.tipo, actualizado_at: new Date().toISOString() });
+            upserts.push({ codigo: r.id, marca: r.marca, tipo: r.tipo,
+                           fuente: 'ia', actualizado_at: new Date().toISOString() });
             guardados++;
           }
         }
-        
-        // Guardar lote en Supabase de golpe
         if (upserts.length > 0) {
           await sb.from(TABLA).upsert(upserts, { onConflict: 'codigo' });
           localStorage.setItem(LS_KEY, JSON.stringify(correcciones));
