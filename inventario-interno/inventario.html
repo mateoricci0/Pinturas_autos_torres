@@ -343,7 +343,7 @@ td.stock{text-align:center;font-weight:600}
   <div class="f-actions">
     <button class="btn btn-out" onclick="limpiarFiltros()">Limpiar</button>
     <button class="btn btn-ghost" onclick="abrirCargaXLS()">Cambiar XLS</button>
-    <button class="btn btn-ghost" id="btn-ia" onclick="clasificarConIA()" style="color:#8E44AD;border-color:#8E44AD">✨ Clasificar con IA</button>
+    <button class="btn btn-ghost" id="btn-ia" onclick="clasificarConIA()" style="color:#8E44AD;border-color:#8E44AD">✨ Clasificar</button>
     <button class="btn btn-oferta" id="btn-ofertas" onclick="abrirModalOfertas()">★ Ofertas <span class="oferta-count-badge" id="oferta-badge" style="display:none">0</span></button>
   </div>
 </div>
@@ -1567,20 +1567,16 @@ async function confirmarSubirOfertas() {
 async function clasificarConIA() {
   const btn = document.getElementById('btn-ia');
   
-  // Solo enviar a la IA los que el clasificador de keywords no pudo resolver
-  const aClasificar = TODOS.filter(p => !correcciones[p._key] && p.tipo === 'Sin clasificar');
-  if (aClasificar.length === 0) {
-    mostrarToast('Todos los productos de este XLS ya han sido clasificados y guardados.');
-    return;
-  }
-
-  // Preparamos payload
-  const payload = aClasificar.map(p => ({
+  // Clasificar todos los productos del XLS
+  const payload = TODOS.map(p => ({
     id: p._key,
     desc: p.descripcion
   }));
 
-  if (!confirm(`${payload.length} productos no se pudieron clasificar automáticamente. ¿Enviarlos a la IA para clasificarlos? (consume crédito de DeepSeek)`)) return;
+  if (payload.length === 0) {
+    mostrarToast('Carga primero un XLS.');
+    return;
+  }
 
   btn.disabled = true;
   const textoOrig = btn.innerHTML;
@@ -1637,7 +1633,7 @@ async function clasificarConIA() {
     aplicarFiltros();
     setIndicador('ok');
 
-    mostrarToast(`✨ IA revisó y guardó ${guardados} productos exitosamente.`);
+    mostrarToast(`✨ ${guardados} productos clasificados y guardados.`);
 
   } catch (err) {
     console.error(err);
