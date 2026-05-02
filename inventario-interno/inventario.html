@@ -810,7 +810,7 @@ async function procesarArchivo(file) {
 /* ──────────────────────────────────────────────
    INICIALIZACIÓN TRAS CARGAR XLS
    ────────────────────────────────────────────── */
-function inicializarConDatos(productos) {
+function inicializarConDatos(productos, desdeNube = false) {
   TODOS_ORIG = productos;
   MARCAS_BASE = [...new Set(productos.map(p => p.marca))].sort();
   TIPOS_BASE  = [...new Set(productos.map(p => p.tipo))].sort();
@@ -821,10 +821,55 @@ function inicializarConDatos(productos) {
   document.getElementById('stats-bar').classList.add('show');
   document.getElementById('tabla-wrap').classList.add('show');
   document.getElementById('top-badge').style.display = '';
-  document.getElementById('top-badge').textContent = productos.length + ' productos · ' + nombreXLS;
+  document.getElementById('top-badge').textContent = productos.length + ' productos · ' + nombreXLS
+    + (desdeNube ? ' ☁' : '');
   document.getElementById('autosave-wrap').style.display = '';
 
   cargarCorrecciones();
+
+  // Si vino de un XLS local, guardarlo en la nube en segundo plano
+  if (!desdeNube) guardarInventarioEnNube(productos);
+}
+
+async function guardarInventarioEnNube(productos) {
+  const ts = new Date().toISOString();
+  const filas = productos.map(p => ({
+    _key:         claveProducto(p),
+    codigo:       p.codigo || '',
+    descripcion:  p.descripcion,
+    precio_costo: p.precio_costo || 0,
+    precio_venta: p.precio_venta || 0,
+    stock:        p.stock || 0,
+    nombre_xls:   nombreXLS,
+    subido_at:    ts,
+  }));
+
+  // Upsert en lotes de 200
+  for (let i = 0; i < filas.length; i += 200) {
+    await sb.from('inventario_productos').upsert(filas.slice(i, i + 200), { onConflict: '_key' });
+  }
+  // Borrar productos que ya no están en el XLS actual
+  await sb.from('inventario_productos').delete().lt('subido_at', ts);
+}
+
+async function cargarInventarioDesdeNube() {
+  const { data, error } = await sb.from('inventario_productos').select('*').order('descripcion');
+  if (error || !data || data.length === 0) return false;
+
+  // Reconstruir estructura de producto compatible con el clasificador
+  const productos = data.map(row => ({
+    codigo:       row.codigo,
+    descripcion:  row.descripcion,
+    precio_costo: row.precio_costo || 0,
+    precio_venta: row.precio_venta || 0,
+    stock:        row.stock || 0,
+    marca:        detectarMarca(row.descripcion),
+    tipo:         detectarTipo(row.descripcion),
+  }));
+
+  nombreXLS = data[0]?.nombre_xls || 'Inventario guardado';
+  inicializarConDatos(productos, true);
+  return true;
 }
 
 /* ──────────────────────────────────────────────
@@ -1354,7 +1399,7 @@ async function iniciarSesion() {
     return;
   }
 
-  mostrarPanelLogueado(data.user);
+  mostrarPanelYCargar(data.user);
 }
 
 async function cerrarSesion() {
@@ -1369,10 +1414,15 @@ document.getElementById('login-email').addEventListener('keydown', e => {
   if (e.key === 'Enter') document.getElementById('login-pass').focus();
 });
 
+async function mostrarPanelYCargar(user) {
+  mostrarPanelLogueado(user);
+  await cargarInventarioDesdeNube();
+}
+
 // Restaurar sesión existente al cargar
 (async () => {
   const { data: { session } } = await sb.auth.getSession();
-  if (session) mostrarPanelLogueado(session.user);
+  if (session) mostrarPanelYCargar(session.user);
 })();
 
 /* ──────────────────────────────────────────────
