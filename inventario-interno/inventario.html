@@ -386,13 +386,17 @@ td.stock{text-align:center;font-weight:600}
 <!-- Modal Ofertas -->
 <div class="modal-bg" id="modal-ofertas">
   <div class="modal" style="max-width:600px">
-    <h3>★ Subir a Catálogo de Ofertas</h3>
-    <p style="margin-bottom:1rem">Para cada producto seleccionado, introduce el precio de oferta y (opcional) una foto.</p>
+    <h3>★ Catálogo de Ofertas</h3>
+    <p style="margin-bottom:1rem;font-size:12px">Configura nuevas ofertas o gestiona las que ya están publicadas en la web.</p>
     <div id="ofertas-lista"></div>
+    <div id="ofertas-activas-lista" style="margin-top:1.5rem;border-top:2px solid #eee;padding-top:1rem;display:none">
+      <h4 style="font-family:var(--head);font-size:12px;margin-bottom:10px;color:var(--dg)">Ofertas actualmente activas</h4>
+      <div id="ofertas-activas-container"></div>
+    </div>
     <div class="modal-log" id="ofertas-log" style="display:none"></div>
     <div class="modal-actions">
-      <button class="btn btn-out" onclick="cerrarModalOfertas()" id="btn-ofertas-cancel">Cancelar</button>
-      <button class="btn btn-oferta" id="btn-ofertas-confirm" onclick="confirmarSubirOfertas()">★ Publicar ofertas</button>
+      <button class="btn btn-out" onclick="cerrarModalOfertas()" id="btn-ofertas-cancel">Cerrar</button>
+      <button class="btn btn-oferta" id="btn-ofertas-confirm" onclick="confirmarSubirOfertas()">★ Publicar nuevas</button>
     </div>
   </div>
 </div>
@@ -1345,51 +1349,95 @@ function actualizarBadgeOfertas() {
   badge.style.display = n > 0 ? '' : 'none';
 }
 
-function abrirModalOfertas() {
-  if (!ofertasSeleccionadas.size) {
-    mostrarToast('Marca con ★ los productos que quieras poner en oferta');
-    return;
-  }
-
+async function abrirModalOfertas() {
+  document.getElementById('modal-ofertas').classList.add('show');
   const lista = document.getElementById('ofertas-lista');
-  lista.innerHTML = [...ofertasSeleccionadas.entries()].map(([key, { producto: p }]) => {
-    const precioOrig = p.precio_venta > 0
-      ? p.precio_venta.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €'
-      : '—';
-    return `
-      <div class="oferta-item" data-key="${escapeHtml(key)}">
-        <div class="oferta-item-name">${escapeHtml(p.descripcion)}</div>
-        <div class="oferta-row">
-          <div class="oferta-field">
-            <label>Precio original</label>
-            <div class="oferta-precio-orig">${precioOrig}</div>
-          </div>
-          <div class="oferta-field">
-            <label>Precio oferta (€) *</label>
-            <input type="number" class="oferta-precio-input" min="0" step="0.01"
-              placeholder="0.00" data-key="${escapeHtml(key)}">
-          </div>
-          <div class="oferta-field" style="flex:0">
-            <label>Foto</label>
-            <div style="display:flex;align-items:center;gap:8px">
-              <label class="foto-label">
-                📷 Añadir foto
-                <input type="file" class="foto-input" accept="image/*" capture="environment"
-                  data-key="${escapeHtml(key)}" onchange="previsualizarFoto(this,'${escapeHtml(key)}')">
-              </label>
-              <img class="foto-preview" id="foto-prev-${escapeHtml(key)}" alt="preview">
+
+  if (ofertasSeleccionadas.size > 0) {
+    lista.innerHTML = [...ofertasSeleccionadas.entries()].map(([key, { producto: p }]) => {
+      const precioOrig = p.precio_venta > 0
+        ? p.precio_venta.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €'
+        : '—';
+      return `
+        <div class="oferta-item" data-key="${escapeHtml(key)}">
+          <div class="oferta-item-name">${escapeHtml(p.descripcion)}</div>
+          <div class="oferta-row">
+            <div class="oferta-field">
+              <label>Precio original</label>
+              <div class="oferta-precio-orig">${precioOrig}</div>
+            </div>
+            <div class="oferta-field">
+              <label>Precio oferta (€) *</label>
+              <input type="number" class="oferta-precio-input" min="0" step="0.01"
+                placeholder="0.00" data-key="${escapeHtml(key)}">
+            </div>
+            <div class="oferta-field" style="flex:0">
+              <label>Foto</label>
+              <div style="display:flex;align-items:center;gap:8px">
+                <label class="foto-label">
+                  📷 Añadir foto
+                  <input type="file" class="foto-input" accept="image/*" capture="environment"
+                    data-key="${escapeHtml(key)}" onchange="previsualizarFoto(this,'${escapeHtml(key)}')">
+                </label>
+                <img class="foto-preview" id="foto-prev-${escapeHtml(key)}" alt="preview">
+              </div>
             </div>
           </div>
+        </div>`;
+    }).join('');
+    document.getElementById('btn-ofertas-confirm').style.display = '';
+  } else {
+    lista.innerHTML = '<div style="font-size:12px;color:#888;text-align:center;padding:10px;background:#FAFAFA;border-radius:6px">No has marcado ningún producto nuevo para subir.</div>';
+    document.getElementById('btn-ofertas-confirm').style.display = 'none';
+  }
+
+  const actContainer = document.getElementById('ofertas-activas-container');
+  const actWrapper = document.getElementById('ofertas-activas-lista');
+  actContainer.innerHTML = '<div style="font-size:11px;color:#888">Cargando...</div>';
+  actWrapper.style.display = 'block';
+
+  const { data, error } = await sb.from('ofertas').select('*').eq('visible', true).order('updated_at', { ascending: false });
+  if (error || !data || data.length === 0) {
+    actContainer.innerHTML = '<div style="font-size:11px;color:#888">No hay ofertas activas.</div>';
+  } else {
+    actContainer.innerHTML = data.map(o => {
+      return `
+        <div class="oferta-item" style="display:flex;justify-content:space-between;align-items:center;background:#fff;border-color:#ddd" data-oferta-id="${escapeHtml(o.codigo)}">
+          <div>
+            <div class="oferta-item-name" style="margin-bottom:4px">${escapeHtml(o.nombre)}</div>
+            <div style="font-size:11px;color:var(--mg);font-family:var(--head);font-weight:700">${Number(o.precio_oferta).toFixed(2)} €</div>
+          </div>
+          <button class="btn btn-out btn-oferta-del" style="color:#C0392B;border-color:#C0392B;padding:6px 12px;font-size:8px" onclick="eliminarOferta('${escapeHtml(o.codigo)}')">🗑️ Eliminar</button>
         </div>
-      </div>`;
-  }).join('');
+      `;
+    }).join('');
+  }
 
   document.getElementById('ofertas-log').style.display = 'none';
   document.getElementById('ofertas-log').textContent = '';
   document.getElementById('btn-ofertas-confirm').disabled = false;
-  document.getElementById('btn-ofertas-confirm').textContent = '★ Publicar ofertas';
+  document.getElementById('btn-ofertas-confirm').textContent = '★ Publicar nuevas';
   document.getElementById('btn-ofertas-cancel').style.display = '';
-  document.getElementById('modal-ofertas').classList.add('show');
+}
+
+async function eliminarOferta(codigo) {
+  if (!confirm('¿Seguro que quieres eliminar esta oferta del catálogo web?')) return;
+  const item = document.querySelector(`[data-oferta-id="${codigo}"]`);
+  const btn = item?.querySelector('.btn-oferta-del');
+  if (btn) { btn.disabled = true; btn.textContent = 'Borrando...'; }
+  
+  const { error } = await sb.from('ofertas').delete().eq('codigo', codigo);
+  if (error) {
+    mostrarToast('Error al eliminar: ' + error.message);
+    if (btn) { btn.disabled = false; btn.textContent = '🗑️ Eliminar'; }
+  } else {
+    mostrarToast('Oferta eliminada correctamente');
+    if (item) item.remove();
+    const container = document.getElementById('ofertas-activas-container');
+    if (container.children.length === 0) {
+      container.innerHTML = '<div style="font-size:11px;color:#888">No hay ofertas activas.</div>';
+    }
+  }
 }
 
 function previsualizarFoto(input, key) {
