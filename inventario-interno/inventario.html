@@ -492,72 +492,95 @@ function esBaseColorimetrica(desc) {
 }
 
 /* ──────────────────────────────────────────────
-   DETECCIÓN DE TIPO  (portado 1:1 del Python)
+   DETECCIÓN DE TIPO — 6 categorías alineadas con la IA
    Orden importa: la primera coincidencia gana.
    ────────────────────────────────────────────── */
+
+// Mapeo de valores legacy (anteriores a la reducción de categorías)
+const TIPO_LEGACY_MAP = {
+  "Base colorimétrica":     "Pintura / Barniz",
+  "Spray aerosol":          "Pintura / Barniz",
+  "Barniz":                 "Pintura / Barniz",
+  "Fondo / Imprimacion":    "Pintura / Barniz",
+  "Pintura / Acabado":      "Pintura / Barniz",
+  "Lija / Abrasivo":        "Abrasivo",
+  "Pistola / Aerografia":   "Equipo",
+  "Lijadora / Pulidora":    "Equipo",
+  "Compresor / Aire":       "Equipo",
+  "Masilla / Fibra":        "Preparación",
+  "Cinta / Enmascarado":    "Preparación",
+  "Adhesivo / Sellado":     "Preparación",
+  "Vaso / Recipiente":      "Preparación",
+  "EPI / Proteccion":       "Consumible",
+  "Pulimento / Abrillantado": "Consumible",
+  "Limpieza":               "Consumible",
+  "Herramienta":            "Consumible",
+};
+
+function normalizarTipo(t) {
+  return TIPO_LEGACY_MAP[t] ?? t;
+}
+
 const TIPOS = [
-  ["Base colorimétrica",   []],
-  ["Spray aerosol",        ["SPRAY ","SPAY ","SRAY "]],
-  ["Lija / Abrasivo",      ["LIJA ","LIJAS ","DISCO VELCRO","DISCO ABRAS",
-                            "DISCO LAMINA","DISCO LAMINAS","DISCO DE LIJAR",
-                            "DISCO TRIZAC","TRIZAC","DSCOS ABRASIVOS",
-                            "DISCOS ","VELCRO ABRAS","ESPONJA LIJAR",
-                            "ESPONJA DE LIJ","GARLOPA","BLOQUE DE LIJADO",
-                            "ALMOHADILLA ","TACO DE LIJA","TACO REDONDO",
-                            "TACO MINI","TACO ","PLIEGO SCOTT","PLIEGO SCOT",
-                            "SCOT BRITE","TELA FALTICA",
-                            "PLATO ","PLATO DE LIJAR","PLATO VELCRO",
-                            "PLATO DE APOYO","INTERFASE ","GOMA ABRASIVA",
-                            "KIT LIJADO","KIT TACOS","TACOS DE LIJADO"]],
-  ["Masilla / Fibra",      ["MASILLA","MASILLLA","UNISOFT",
-                            "PL FIBRA","PL- FIBRA","PL KIT DE REP",
-                            "PL PEROXIDO","PL PLAD",
-                            "QUITA PULVERIZADOS"]],
-  ["Barniz",               ["BARNIZ ","BARNIZ.","CLEARCOAT","AUTOCLEAR",
-                            "ACRITOP","LACA MATE","LACA "]],
-  ["Fondo / Imprimacion",  ["FONDO ","FONDOS ","IMPRIMACION","IMPRIMACI",
-                            "WASH PRIMER","WASHPRIMER","PRECARGA",
-                            "CONVERTIDOR DE OXIDO","CONVERTIDOR OXIDO",
-                            "ANTIGRAVILLA","ANTIOXIDANTE","FOSFATANTE",
-                            "1K ALL PLASTIC PRIMER","ALL PLASTIC PRIMER",
-                            "DESOXIDANTE","PRIMER ","SEALER "]],
-  ["Pintura / Acabado",    ["PINTURA ","NEGRO MATE","NEGRO SATINADO",
-                            "NEGRO TEXTURADO","NEGRO BRILLANTE",
-                            "TEXTURADO ","TESTURADO ",
-                            "ALUMINIO LLANTAS","ALUMNIO LLANTAS",
-                            "ALUMINO LLANTAS","ALUMINIO ANTICALORICO",
-                            "ROJO ANTICALORICO","TINTE ","URKI-LAC","URKI-SPRAY"]],
+  ["Pintura / Barniz",         ["SPRAY ","SPAY ","SRAY ",
+                                "BARNIZ ","BARNIZ.","CLEARCOAT","AUTOCLEAR","ACRITOP","LACA MATE","LACA ",
+                                "FONDO ","FONDOS ","IMPRIMACION","IMPRIMACI",
+                                "WASH PRIMER","WASHPRIMER","PRECARGA",
+                                "CONVERTIDOR DE OXIDO","CONVERTIDOR OXIDO",
+                                "ANTIGRAVILLA","ANTIOXIDANTE","FOSFATANTE",
+                                "1K ALL PLASTIC PRIMER","ALL PLASTIC PRIMER",
+                                "DESOXIDANTE","PRIMER ","SEALER ",
+                                "PINTURA ","NEGRO MATE","NEGRO SATINADO",
+                                "NEGRO TEXTURADO","NEGRO BRILLANTE",
+                                "TEXTURADO ","TESTURADO ",
+                                "ALUMINIO LLANTAS","ALUMNIO LLANTAS",
+                                "ALUMINO LLANTAS","ALUMINIO ANTICALORICO",
+                                "ROJO ANTICALORICO","TINTE ","URKI-LAC","URKI-SPRAY"]],
   ["Disolvente / Catalizador", ["DISOLVENTE","DSOLVENTE","DISOLV ",
                                 "CATALIZADOR","DILUYENTE",
                                 "ENDURECEDOR","HARDENER","REDUCTOR ",
                                 "REDUCER","ACTIVADOR ","ACCELERATOR",
                                 "ACELERANTE","THINNER","CONVERTIDOR UHS",
                                 "ELAST-O-ACTIF","ELASTIC-O-ACTIF"]],
-  ["Pistola / Aerografia", ["PISTOLA ","PISTOLAS ","BOQUILLA ","AEROGRAFO ",
-                            "CEPILLOS LIMPIADORES DE AEROGRAFIA",
-                            "TAPON AEROGRAFIA","T AEROGRAFIA",
-                            "DEPOSITO DE GRAVEDAD","DEPOSITO GRAVEDAD",
-                            "DEPOSITOS DE GRAVEDAD","RETENEDOR DE FILTROS",
-                            "ADAPTADOR PPS","ADAPTADOR PARA PPS",
-                            "ADAPTADOR ALUMINIO","ADAPTADOR PARA AEROG",
-                            "KIT PICO","KIT PIC","JUNTA VALVULA",
-                            "PRENSA ESTOPAS","FILTRO PRODUCTO GRAVEDAD",
-                            "RACOR ","RACORD","CONECTOR ","AGUJA ",
-                            "FURA ","SPETTRO","SOPLADOR DE BOLSILLO",
-                            "VICTORIA RS","VICTORIA  RS","VICTORIA 215"]],
-  ["Lijadora / Pulidora",  ["LIJADORA","PULIDORA","EXCENTRICA","SOPLADORA",
-                            "SOPLADOR DE AIRE","ASPIRADOR ","ASPIRADORA ",
-                            "SACABOLLOS","KIT SABABOLLOS",
-                            "MAQUINA SOLDAR","NANOPLASTIC",
-                            "EQUIPO DE ILUMINACION","ALTAIR LED"]],
-  ["Compresor / Aire",     ["COMPRESOR","MANGUERA ","REGULADOR DE PRESION",
-                            "REGULADOR DE AIRE","REGULADOR PISTOLA",
-                            "REGULADOR CAUDAL","RC1 REGULADOR","RC2 REGULADOR",
-                            "PURIFICADOR","CONDENSADOR ","FILTRO SEPARADOR",
-                            "FILTRO REGULADOR","ENCHUFE LATON","ENCHUFE ",
-                            "PNEUMATICO","KIT 34PCS",
-                            "VALVULA ","VALVULA.","T 1/2 ","T 1/4 "]],
-  ["Cinta / Enmascarado",  ["CINTA ","ROLLO ","BOBINA ","CUBRETODO",
+  ["Abrasivo",                 ["LIJA ","LIJAS ","DISCO VELCRO","DISCO ABRAS",
+                                "DISCO LAMINA","DISCO LAMINAS","DISCO DE LIJAR",
+                                "DISCO TRIZAC","TRIZAC","DSCOS ABRASIVOS",
+                                "DISCOS ","VELCRO ABRAS","ESPONJA LIJAR",
+                                "ESPONJA DE LIJ","GARLOPA","BLOQUE DE LIJADO",
+                                "ALMOHADILLA ","TACO DE LIJA","TACO REDONDO",
+                                "TACO MINI","TACO ","PLIEGO SCOTT","PLIEGO SCOT",
+                                "SCOT BRITE","TELA FALTICA",
+                                "PLATO ","PLATO DE LIJAR","PLATO VELCRO",
+                                "PLATO DE APOYO","INTERFASE ","GOMA ABRASIVA",
+                                "KIT LIJADO","KIT TACOS","TACOS DE LIJADO"]],
+  ["Equipo",                   ["PISTOLA ","PISTOLAS ","BOQUILLA ","AEROGRAFO ",
+                                "CEPILLOS LIMPIADORES DE AEROGRAFIA",
+                                "TAPON AEROGRAFIA","T AEROGRAFIA",
+                                "DEPOSITO DE GRAVEDAD","DEPOSITO GRAVEDAD",
+                                "DEPOSITOS DE GRAVEDAD","RETENEDOR DE FILTROS",
+                                "ADAPTADOR PPS","ADAPTADOR PARA PPS",
+                                "ADAPTADOR ALUMINIO","ADAPTADOR PARA AEROG",
+                                "KIT PICO","KIT PIC","JUNTA VALVULA",
+                                "PRENSA ESTOPAS","FILTRO PRODUCTO GRAVEDAD",
+                                "RACOR ","RACORD","CONECTOR ","AGUJA ",
+                                "FURA ","SPETTRO","SOPLADOR DE BOLSILLO",
+                                "VICTORIA RS","VICTORIA  RS","VICTORIA 215",
+                                "LIJADORA","PULIDORA","EXCENTRICA","SOPLADORA",
+                                "SOPLADOR DE AIRE","ASPIRADOR ","ASPIRADORA ",
+                                "SACABOLLOS","KIT SABABOLLOS",
+                                "MAQUINA SOLDAR","NANOPLASTIC",
+                                "EQUIPO DE ILUMINACION","ALTAIR LED",
+                                "COMPRESOR","MANGUERA ","REGULADOR DE PRESION",
+                                "REGULADOR DE AIRE","REGULADOR PISTOLA",
+                                "REGULADOR CAUDAL","RC1 REGULADOR","RC2 REGULADOR",
+                                "PURIFICADOR","CONDENSADOR ","FILTRO SEPARADOR",
+                                "FILTRO REGULADOR","ENCHUFE LATON","ENCHUFE ",
+                                "PNEUMATICO","KIT 34PCS",
+                                "VALVULA ","VALVULA.","T 1/2 ","T 1/4 "]],
+  ["Preparación",              ["MASILLA","MASILLLA","UNISOFT",
+                                "PL FIBRA","PL- FIBRA","PL KIT DE REP",
+                                "PL PEROXIDO","PL PLAD","QUITA PULVERIZADOS",
+                                "CINTA ","ROLLO ","BOBINA ","CUBRETODO",
                             "PAPEL ENCM","FILM CON","FILM POLIET",
                             "VELCRO ADHESIVO"]],
   ["EPI / Proteccion",     ["MASCARILLA","MASCARA SILICONA","CARETA ",
@@ -580,36 +603,39 @@ const TIPOS = [
                                 "ESPONJA BRILLO","ESPONJA DE BRILLO",
                                 "ESPONJA VERDE DE PULIR",
                                 "ESPONJA ACHICHON","ESPONJA DOBLE CARA",
-                                "MINI ESPONJA","CERA PROTECTORA",
-                                "BOLIGRAFO RETOQUE"]],
-  ["Limpieza",             ["DESENGRASANTE","ANTISILICONA","SILICON OFF",
-                            "KIT LIMPIEZA","AUTOWAVE LIMPIAPISTOLAS",
-                            "LIMPIAPISTOLAS","GUNCLEANER",
-                            "RESTAURADOR DE PLASTICOS","RESTAURADOR DE PLAST",
-                            "NANO FLASH","STARK ","PAÑOS ATRAPAPOLVO",
-                            "PAÑOS ATRAP","LIMPIAMETALES"]],
-  ["Adhesivo / Sellado",   ["ADHESIVO","SELLADOR","SIKAFLEX","PEGAMENTO",
-                            "COLA DE CONTACTO","PEGUE DE JUNTAS","PEGUE JUNTAS",
-                            "PEGUE ","COLA ","GRAPAS ","CIANOCRILATO",
-                            "CANULAS","RESINA ORTO","KIT FIBRA",
-                            "KIT DE FIBRA","METAL BONDING","REPARADOR DE PLASTICOS",
-                            "REPARACIONES DE PLASTICOS","GODZILLA TINTABLE",
-                            "NANO ADHESIVO","CRS METAL BONDING"]],
-  ["Herramienta",          ["CUTTER","CUCHILLAS","ESPATULA","PINCEL ",
-                            "PINCELES","BROCHA ","BROCHAS","RODILLO",
-                            "REGLA MEDIR","REGLA PEQUEÑA",
-                            "MANGO VARILLA","RECAMBIO VELOUR",
-                            "KIT DESMONT","SET MARTILLOS","MARTILLOS Y TAS",
-                            "RASCAVIDRIOS","VENTOSA ","HERRAMIENTAS PARA SACAR",
-                            "KIT PARABRISAS","HILO TRENZADO","HILO CUADRADO",
-                            "HILO SACALUNAS","ALAMBRE TRENZADO",
-                            "LUPA MANUAL","ESPADIN ","KIT REPARACION TAG",
-                            "CARBONES RUPES","CARBONES ",
-                            "LLAVE ","ESCOBILLAS","SOPORTE "]],
+                                "MINI ESPONJA","CERA PROTECTORA","BOLIGRAFO RETOQUE",
+                                "ADHESIVO","SELLADOR","SIKAFLEX","PEGAMENTO",
+                                "COLA DE CONTACTO","PEGUE DE JUNTAS","PEGUE JUNTAS",
+                                "PEGUE ","COLA ","GRAPAS ","CIANOCRILATO",
+                                "CANULAS","RESINA ORTO","KIT FIBRA",
+                                "KIT DE FIBRA","METAL BONDING","REPARADOR DE PLASTICOS",
+                                "REPARACIONES DE PLASTICOS","GODZILLA TINTABLE",
+                                "NANO ADHESIVO","CRS METAL BONDING",
+                                "DESENGRASANTE","ANTISILICONA","SILICON OFF",
+                                "KIT LIMPIEZA","AUTOWAVE LIMPIAPISTOLAS",
+                                "LIMPIAPISTOLAS","GUNCLEANER",
+                                "RESTAURADOR DE PLASTICOS","RESTAURADOR DE PLAST",
+                                "NANO FLASH","STARK ","PAÑOS ATRAPAPOLVO",
+                                "PAÑOS ATRAP","LIMPIAMETALES",
+                                "MASCARILLA","MASCARA SILICONA","CARETA ",
+                                "GUANTE","MONO PINTOR","MONO DE","MONOS ",
+                                "GAFAS ","FILTRO PARTICULAS","FILTRO PARA VAPORES",
+                                "KIT FILTRO CARETA","ABEKI FILTRO","FILRO PARTICULAS",
+                                "CUTTER","CUCHILLAS","ESPATULA","PINCEL ",
+                                "PINCELES","BROCHA ","BROCHAS","RODILLO",
+                                "REGLA MEDIR","REGLA PEQUEÑA",
+                                "MANGO VARILLA","RECAMBIO VELOUR",
+                                "KIT DESMONT","SET MARTILLOS","MARTILLOS Y TAS",
+                                "RASCAVIDRIOS","VENTOSA ","HERRAMIENTAS PARA SACAR",
+                                "KIT PARABRISAS","HILO TRENZADO","HILO CUADRADO",
+                                "HILO SACALUNAS","ALAMBRE TRENZADO",
+                                "LUPA MANUAL","ESPADIN ","KIT REPARACION TAG",
+                                "CARBONES RUPES","CARBONES ",
+                                "LLAVE ","ESCOBILLAS","SOPORTE "]],
 ];
 
 function detectarTipo(desc) {
-  if (esBaseColorimetrica(desc)) return "Base colorimétrica";
+  if (esBaseColorimetrica(desc)) return "Pintura / Barniz";
   const d = (desc || "").toUpperCase();
   for (const [nombre, palabras] of TIPOS) {
     for (const p of palabras) {
@@ -813,7 +839,7 @@ function aplicarCorreccionesADatos() {
     const c = correcciones[key] || {};
     return { ...p, _idx: i, _key: key,
              marca: c.marca ?? p.marca,
-             tipo:  c.tipo  ?? p.tipo };
+             tipo:  normalizarTipo(c.tipo  ?? p.tipo) };
   });
 }
 
@@ -827,7 +853,7 @@ async function cargarCorrecciones() {
     if (corrResp.error) throw corrResp.error;
     correcciones = {};
     (corrResp.data || []).forEach(row => {
-      correcciones[row.codigo] = { marca: row.marca, tipo: row.tipo };
+      correcciones[row.codigo] = { marca: row.marca, tipo: normalizarTipo(row.tipo) };
     });
     localStorage.setItem(LS_KEY, JSON.stringify(correcciones));
     setIndicador('ok');
@@ -1541,8 +1567,8 @@ async function confirmarSubirOfertas() {
 async function clasificarConIA() {
   const btn = document.getElementById('btn-ia');
   
-  // Buscar productos que NO tengan una corrección manual o de IA previa guardada
-  const aClasificar = TODOS.filter(p => !correcciones[p._key]);
+  // Solo enviar a la IA los que el clasificador de keywords no pudo resolver
+  const aClasificar = TODOS.filter(p => !correcciones[p._key] && p.tipo === 'Sin clasificar');
   if (aClasificar.length === 0) {
     mostrarToast('Todos los productos de este XLS ya han sido clasificados y guardados.');
     return;
@@ -1554,7 +1580,7 @@ async function clasificarConIA() {
     desc: p.descripcion
   }));
 
-  if (!confirm(`Se enviarán ${payload.length} productos a la Inteligencia Artificial para revisarlos y clasificarlos de forma precisa. ¿Continuar?`)) return;
+  if (!confirm(`${payload.length} productos no se pudieron clasificar automáticamente. ¿Enviarlos a la IA para clasificarlos? (consume crédito de DeepSeek)`)) return;
 
   btn.disabled = true;
   const textoOrig = btn.innerHTML;
