@@ -1564,7 +1564,7 @@ async function clasificarConIA() {
     const token = session ? session.access_token : SB_KEY;
 
     let guardados = 0;
-    const BATCH_SIZE = 50; // Procesar de 50 en 50 para no saturar DeepSeek
+    const BATCH_SIZE = 25; // Procesar de 25 en 25 para no saturar DeepSeek y evitar timeouts
 
     for (let i = 0; i < payload.length; i += BATCH_SIZE) {
       const lote = payload.slice(i, i + BATCH_SIZE);

@@ -56,7 +56,7 @@ Formato estricto de respuesta:
 
     const promptUser = "Aquí tienes la lista de productos:\n\n" + JSON.stringify(batch);
 
-    const res = await fetch('https://api.deepseek.com/v1/chat/completions', {
+    const res = await fetch('https://api.deepseek.com/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -76,15 +76,21 @@ Formato estricto de respuesta:
     const aiData = await res.json();
     
     if (aiData.error) {
-      throw new Error(aiData.error.message || 'Error de la API de DeepSeek');
+      throw new Error('API DeepSeek: ' + (aiData.error.message || JSON.stringify(aiData.error)));
+    }
+
+    if (!aiData.choices || !aiData.choices[0]) {
+      throw new Error('Respuesta inesperada de la IA: ' + JSON.stringify(aiData));
     }
 
     let resultado;
     try {
-      const content = aiData.choices[0].message.content;
+      let content = aiData.choices[0].message.content;
+      // Limpiar markdown si la IA responde con ```json
+      content = content.replace(/```json/gi, '').replace(/```/g, '').trim();
       resultado = JSON.parse(content);
     } catch (e) {
-      throw new Error("La IA no devolvió un JSON válido.");
+      throw new Error("La IA no devolvió un JSON válido. " + e.message);
     }
 
     return new Response(JSON.stringify({ resultados: resultado.productos }), {
