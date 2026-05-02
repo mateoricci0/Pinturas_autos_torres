@@ -681,7 +681,6 @@ function detectarCategoria(desc) {
 let TODOS_ORIG = [];      // productos tal como salen del XLS
 let TODOS = [];           // con correcciones aplicadas
 let correcciones = {};    // { codigo: { marca, tipo } }
-let eliminados = new Set(); // codigos marcados como eliminados
 let visibles = {};        // { key: boolean } — visible en catálogo web
 let MARCAS_BASE = [];
 let TIPOS_BASE = [];
@@ -839,15 +838,13 @@ function claveProducto(p) {
 }
 
 function aplicarCorreccionesADatos() {
-  TODOS = TODOS_ORIG
-    .filter(p => !eliminados.has(claveProducto(p)))
-    .map((p, i) => {
-      const key = claveProducto(p);
-      const c = correcciones[key] || {};
-      return { ...p, _idx: i, _key: key,
-               marca: c.marca ?? p.marca,
-               tipo:  normalizarTipo(c.tipo  ?? p.tipo) };
-    });
+  TODOS = TODOS_ORIG.map((p, i) => {
+    const key = claveProducto(p);
+    const c = correcciones[key] || {};
+    return { ...p, _idx: i, _key: key,
+             marca: c.marca ?? p.marca,
+             tipo:  normalizarTipo(c.tipo  ?? p.tipo) };
+  });
 }
 
 async function cargarCorrecciones() {
@@ -859,9 +856,8 @@ async function cargarCorrecciones() {
     ]);
     if (corrResp.error) throw corrResp.error;
     correcciones = {};
-    eliminados = new Set();
     (corrResp.data || []).forEach(row => {
-      if (row.eliminado) { eliminados.add(row.codigo); return; }
+      if (row.eliminado) return;
       correcciones[row.codigo] = { marca: row.marca, tipo: normalizarTipo(row.tipo) };
     });
     localStorage.setItem(LS_KEY, JSON.stringify(correcciones));
@@ -916,19 +912,18 @@ function setIndicador(estado) {
 }
 
 async function eliminarProducto(key) {
-  eliminados.add(key);
+  // Quitar de la vista actual
+  TODOS_ORIG = TODOS_ORIG.filter(p => claveProducto(p) !== key);
   delete correcciones[key];
   aplicarCorreccionesADatos();
   poblarSelects();
   aplicarFiltros();
-  mostrarToast('Producto eliminado del inventario.');
+  mostrarToast('Producto eliminado. Reaparecerá si vuelve en el próximo XLS.');
+  // Borrar su corrección de Supabase para que vuelva limpio la próxima vez
   try {
-    await sb.from(TABLA).upsert(
-      { codigo: key, eliminado: true, actualizado_at: new Date().toISOString() },
-      { onConflict: 'codigo' }
-    );
+    await sb.from(TABLA).delete().eq('codigo', key);
   } catch (err) {
-    console.warn('No se pudo guardar eliminado en Supabase:', err.message);
+    console.warn('No se pudo borrar de Supabase:', err.message);
   }
 }
 
