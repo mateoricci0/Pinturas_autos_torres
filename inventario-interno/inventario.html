@@ -344,7 +344,6 @@ td.stock{text-align:center;font-weight:600}
     <button class="btn btn-out" onclick="limpiarFiltros()">Limpiar</button>
     <button class="btn btn-ghost" onclick="abrirCargaXLS()">Cambiar XLS</button>
     <button class="btn btn-oferta" id="btn-ofertas" onclick="abrirModalOfertas()">★ Ofertas <span class="oferta-count-badge" id="oferta-badge" style="display:none">0</span></button>
-    <button class="btn btn-primary" id="btn-subir" onclick="abrirModalSubir()">↑ Subir al catálogo</button>
   </div>
 </div>
 
@@ -384,24 +383,6 @@ td.stock{text-align:center;font-weight:600}
   </div>
 </div>
 
-<!-- Modal Subir Catálogo -->
-<div class="modal-bg" id="modal-subir">
-  <div class="modal">
-    <h3>Subir al catálogo web</h3>
-    <p id="modal-subir-desc">
-      Se enviarán los productos a la web pública.
-      Los nuevos quedan con <b>visible = false</b> (Alicia los activa desde el panel).
-      Los existentes actualizan nombre, categoría, precio y stock.
-      <b>Las bases colorimétricas se excluyen automáticamente.</b>
-    </p>
-    <div class="modal-stats" id="modal-subir-stats"></div>
-    <div class="modal-log" id="modal-subir-log" style="display:none"></div>
-    <div class="modal-actions">
-      <button class="btn btn-out" onclick="cerrarModalSubir()" id="btn-modal-cancel">Cancelar</button>
-      <button class="btn btn-primary" id="btn-modal-confirm" onclick="confirmarSubir()">Confirmar y subir</button>
-    </div>
-  </div>
-</div>
 
 <!-- Modal Ofertas -->
 <div class="modal-bg" id="modal-ofertas">
