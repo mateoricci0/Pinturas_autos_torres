@@ -899,6 +899,11 @@ function aplicarCorreccionesADatos() {
 
 async function cargarCorrecciones() {
   setIndicador('cargando');
+
+  // Cargar localStorage como base de seguridad ante fallos parciales de guardado
+  let localData = {};
+  try { localData = JSON.parse(localStorage.getItem(LS_KEY) || '{}'); } catch(e) {}
+
   try {
     const [corrResp, visResp] = await Promise.all([
       sb.from(TABLA).select('codigo,marca,tipo,fuente'),
@@ -912,11 +917,15 @@ async function cargarCorrecciones() {
       correcciones[row.codigo] = { marca: row.marca, tipo: normalizarTipo(row.tipo) };
       if (row.fuente === 'manual') manuales.add(row.codigo);
     });
+    // Preservar entradas de localStorage que no llegaron a Supabase (upserts fallidos)
+    for (const [key, val] of Object.entries(localData)) {
+      if (!correcciones[key]) correcciones[key] = val;
+    }
     localStorage.setItem(LS_KEY, JSON.stringify(correcciones));
     setIndicador('ok');
   } catch (err) {
     console.warn('Sin conexión con Supabase:', err.message);
-    try { correcciones = JSON.parse(localStorage.getItem(LS_KEY) || '{}'); } catch(e) {}
+    correcciones = localData;
     setIndicador('offline');
   }
   aplicarCorreccionesADatos();
@@ -1711,8 +1720,10 @@ async function clasificarConIA() {
       guardados++;
     }
     if (basesUpserts.length > 0) {
-      for (let i = 0; i < basesUpserts.length; i += 200)
-        await sb.from(TABLA).upsert(basesUpserts.slice(i, i + 200), { onConflict: 'codigo' });
+      for (let i = 0; i < basesUpserts.length; i += 200) {
+        const { error: baseErr } = await sb.from(TABLA).upsert(basesUpserts.slice(i, i + 200), { onConflict: 'codigo' });
+        if (baseErr) console.error('Error guardando bases colorimétricas:', baseErr);
+      }
     }
     procesados += basesUpserts.length;
     btn.innerHTML = `✨ (${procesados}/${total})`;
@@ -1748,7 +1759,11 @@ async function clasificarConIA() {
           }
         }
         if (upserts.length > 0) {
-          await sb.from(TABLA).upsert(upserts, { onConflict: 'codigo' });
+          const { error: upsertErr } = await sb.from(TABLA).upsert(upserts, { onConflict: 'codigo' });
+          if (upsertErr) {
+            console.error('Error guardando clasificaciones IA:', upsertErr);
+            mostrarToast('⚠️ Error guardando lote en la nube: ' + upsertErr.message);
+          }
           localStorage.setItem(LS_KEY, JSON.stringify(correcciones));
         }
       }
