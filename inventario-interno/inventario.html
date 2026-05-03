@@ -301,7 +301,6 @@ td.stock{text-align:center;font-weight:600}
     </div>
     <span class="user-email" id="user-email" style="display:none"></span>
     <button class="btn-pass" id="btn-pass" style="display:none" onclick="abrirModalPass()">Contraseña</button>
-    <button class="btn-logout" id="btn-borrar-prueba" style="display:none" onclick="borrarFotosPrueba()">🗑 Borrar fotos prueba</button>
     <button class="btn-logout" id="btn-logout" style="display:none" onclick="cerrarSesion()">Cerrar sesión</button>
   </div>
 </div>
@@ -1337,7 +1336,6 @@ function mostrarPanelLogueado(user) {
   document.getElementById('user-email').textContent = user.email;
   document.getElementById('user-email').style.display = '';
   document.getElementById('btn-pass').style.display = '';
-  document.getElementById('btn-borrar-prueba').style.display = '';
   document.getElementById('btn-logout').style.display = '';
 }
 
@@ -1411,21 +1409,6 @@ async function iniciarSesion() {
 async function cerrarSesion() {
   await sb.auth.signOut();
   location.reload();
-}
-
-async function borrarFotosPrueba() {
-  const PRUEBA = [
-    '06925_1777695606121.jpg','3m09374_1777695604907.jpg',
-    '37_1777683651805.jpg','20121826_1777682939369.jpg',
-    '101_1777682938729.jpg','3M50388_1777682938241.jpg',
-    'SK523621_1777682937647.jpg','37_1777682936358.png',
-  ];
-  const btn = document.getElementById('btn-borrar-prueba');
-  btn.disabled = true; btn.textContent = 'Borrando...';
-  const { error } = await sb.storage.from('ofertas-fotos').remove(PRUEBA);
-  if (error) { alert('Error: ' + error.message); btn.disabled = false; btn.textContent = 'Borrar fotos prueba'; return; }
-  btn.style.display = 'none';
-  alert('Fotos de prueba eliminadas.');
 }
 
 document.getElementById('login-pass').addEventListener('keydown', e => {

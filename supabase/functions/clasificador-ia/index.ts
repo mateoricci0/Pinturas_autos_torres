@@ -12,50 +12,60 @@ CATEGORÍAS — usa EXACTAMENTE uno de estos 6 textos, sin variaciones:
 
 "Pintura / Barniz"
   → pinturas de acabado, barnices, lacas, fondos, imprimaciones, aparejos, wash primers,
-    antigravillas, convertidores de óxido, bases colorimétricas, toners, sprays de color/acabado.
-  → REGLA FIJA: si la descripción empieza por "BASE " → siempre esta categoría.
+    antigravillas, convertidores de óxido, toners, sprays de color/acabado, lacas de agua, filler.
+  → REGLA FIJA: palabras BARNIZ, LACA, IMPRIMACION, APAREJO, FONDO, WASH PRIMER,
+    ANTIGRAVILLA, TONER en la descripción → siempre esta categoría.
 
 "Disolvente / Catalizador"
   → disolventes, diluyentes, catalizadores, endurecedores, reductores, activadores,
-    thinners, accelerators, convertidores UHS, productos elásticos (Elast-o-actif).
-  → REGLA FIJA: si contiene DISOLVENTE, CATALIZADOR, DILUYENTE, ENDURECEDOR, HARDENER, REDUCER → siempre esta categoría.
+    thinners, aceleradores, convertidores UHS, productos elásticos (Elast-o-actif, Elastificante).
+  → REGLA FIJA: si la descripción contiene DISOLVENTE, CATALIZADOR, DILUYENTE, ENDURECEDOR,
+    HARDENER, REDUCER, ACTIVADOR, ACELERADOR o ELAST → siempre esta categoría.
 
 "Abrasivo"
   → lijas en hoja, disco, rollo o taco; bloques y garlopas de lijar; discos velcro;
-    discos Trizac; esponjas de lijar; almohadillas; platos de apoyo; interfases.
+    discos Trizac; esponjas de lijar; almohadillas abrasivas; platos de apoyo; interfases.
+  → REGLA FIJA: palabras LIJA, LIJADO, ABRASIVO, TRIZAC o patrón VELCRO P seguido de número → siempre esta categoría.
 
 "Equipo"
-  → pistolas de pintar, aerógrafos, boquillas, pulidoras, lijadoras excéntricas,
-    compresores, sopladores, aspiradoras, depósitos de gravedad, reguladores de presión,
-    mangueras, accesorios de pistola (agujas, juegos PPS, racores).
+  → pistolas de pintar (HVLP, LVLP, convencional), aerógrafos, boquillas y agujas,
+    pulidoras, lijadoras excéntricas, compresores, sopladores, aspiradoras,
+    depósitos de gravedad, reguladores de presión, mangueras,
+    accesorios de pistola (juegos PPS, racores, filtros de pistola).
+  → REGLA FIJA: palabras PISTOLA, PULIDORA, LIJADORA, COMPRESOR, ASPIRADOR → siempre esta categoría.
 
 "Preparación"
-  → masillas (poliéster, fibra, epoxi), cintas de enmascarar, papel de enmascarar,
-    film de protección, cubretodos, adhesivos, selladores, sikaflex, vasos de mezcla,
-    envases de plástico, cánulas, kits de reparación de plásticos.
+  → masillas (poliéster, fibra, epoxi, fina), cintas de enmascarar, papel de enmascarar,
+    film de protección, cubretodos, adhesivos, selladores, sikaflex, sikagum,
+    vasos de mezcla, envases de plástico, cánulas de mezcla, kits de reparación de plásticos.
 
 "Consumible"
   → pulimentos, abrillantadores, pastas de pulir, ceras, boinas, esponjas de pulir,
-    desengrasantes, antisilicona, limpiapistolass, paños atrapapolvo,
-    EPIs (guantes, monos, mascarillas, gafas, caretas),
-    herramientas manuales (espátulas, cutters, pinceles, brochas, rodillos),
+    desengrasantes, alcohol isopropílico, antisilicona, limpiapistolas, paños atrapapolvo,
+    EPIs (guantes, monos, mascarillas, gafas, caretas, protectores auditivos),
+    herramientas manuales (espátulas, cutters, pinceles, brochas, rodillos, rasquetas),
     bolígrafos de retoque, restauradores de plásticos.
 
 REGLAS PARA MARCA:
-- Extrae la marca si aparece en el nombre del producto (explícita o implícita por nomenclatura).
+- Extrae la marca si aparece en el nombre del producto (explícita o por nomenclatura propia).
 - Marcas comunes: Sikkens, Novol, Sagola, 3M, Indasa, Metabo, Besa, Dismoer, Airum, Felton,
-  Bryll, Kenda, Full Dip, Wanda, Hifeson, CRS, Iwata, Sata, Franchi & Kim, Vermaat, Rupes, Mirka, Norton.
+  Bryll, Kenda, Full Dip, Wanda, Hifeson, CRS, Iwata, Sata, Franchi & Kim, Vermaat,
+  Rupes, Mirka, Norton, Colad, Mipa, Spies Hecker, Standox, Glasurit, AutoWave.
 - Códigos que empiezan por SK → marca "Sikkens".
+- Productos con "AUARITA" o "MO-102" en el nombre → marca "Airum".
 - Si no puedes determinarlo con seguridad → "Sin marca".
 
-EJEMPLOS (usa como referencia):
+EJEMPLOS (úsalos como referencia estricta):
 - "LIJA REDONDA VELCRO P80 150MM" → tipo: "Abrasivo", marca: "Sin marca"
 - "BARNIZ AUTOCLEAR 2:1 1L" → tipo: "Pintura / Barniz", marca: "Sikkens"
 - "DISOLVENTE RAPIDO ESTANDAR 5L" → tipo: "Disolvente / Catalizador", marca: "Sin marca"
 - "CATALIZADOR NORMAL 0.5L NOVOL" → tipo: "Disolvente / Catalizador", marca: "Novol"
 - "PISTOLA HVLP SAGOLA 480 GRAVITY 1.4" → tipo: "Equipo", marca: "Sagola"
+- "PISTOLA AUARITA MO-102 HVLP 1.3" → tipo: "Equipo", marca: "Airum"
 - "CINTA ENMASCARAR 19MM INDASA" → tipo: "Preparación", marca: "Indasa"
+- "PAPEL ENMASCARAR 45CM" → tipo: "Preparación", marca: "Sin marca"
 - "GUANTE NITRILO NEGRO TALLA L" → tipo: "Consumible", marca: "Sin marca"
+- "MASCARILLA FFP2 SIN VALVULA" → tipo: "Consumible", marca: "Sin marca"
 - "BASE MM 900D 0.5L AUTOWAVE" → tipo: "Pintura / Barniz", marca: "Sikkens"
 - "MASILLA POLIESTER NOVOL 1.8KG" → tipo: "Preparación", marca: "Novol"
 - "PULIMENTO MEDIO 3M 1L" → tipo: "Consumible", marca: "3M"
@@ -64,6 +74,13 @@ EJEMPLOS (usa como referencia):
 - "BOINA LANA 150MM RUPES" → tipo: "Consumible", marca: "Rupes"
 - "VASO DE MEZCLA 650ML" → tipo: "Preparación", marca: "Sin marca"
 - "MONO PINTOR TYVEK TALLA L" → tipo: "Consumible", marca: "Sin marca"
+- "DISCO TRIZAC 3M P1500 150MM" → tipo: "Abrasivo", marca: "3M"
+- "DESENGRASANTE ANTISILICONA 5L" → tipo: "Consumible", marca: "Sin marca"
+- "ELAST-O-ACTIF 0.5L SIKKENS" → tipo: "Disolvente / Catalizador", marca: "Sikkens"
+- "WASH PRIMER 2K 1L" → tipo: "Pintura / Barniz", marca: "Sin marca"
+- "CONVERTIDOR DE OXIDO 1L" → tipo: "Pintura / Barniz", marca: "Sin marca"
+- "LIJA HOJA PAPEL P400" → tipo: "Abrasivo", marca: "Sin marca"
+- "ALCOHOL ISOPROPILICO 5L" → tipo: "Consumible", marca: "Sin marca"
 
 Formato de respuesta — JSON puro, SIN markdown, SIN texto adicional:
 {"productos": [{"id": "id_recibido", "marca": "Marca", "tipo": "Categoria"}]}`
@@ -130,7 +147,6 @@ serve(async (req) => {
       throw new Error("La IA no devolvió un JSON válido: " + e.message);
     }
 
-    // Validar que los tipos devueltos son de las 6 categorías permitidas
     const TIPOS_VALIDOS = new Set([
       "Pintura / Barniz", "Disolvente / Catalizador", "Abrasivo",
       "Equipo", "Preparación", "Consumible"
