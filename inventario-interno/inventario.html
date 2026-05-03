@@ -818,7 +818,7 @@ async function procesarArchivo(file) {
 function inicializarConDatos(productos, desdeNube = false) {
   TODOS_ORIG = productos;
   MARCAS_BASE = [...new Set(productos.map(p => p.marca))].sort();
-  TIPOS_BASE  = [...new Set(productos.map(p => p.tipo))].sort();
+  TIPOS_BASE  = [...new Set(productos.map(p => normalizarTipo(p.tipo)))].sort();
 
   // Mostrar UI
   document.getElementById('dropzone-wrap').style.display = 'none';
@@ -997,12 +997,26 @@ function poblarSelects() {
   const mAct = selMarca.value, tAct = selTipo.value;
   selMarca.innerHTML = '<option value="">Todas las marcas</option>';
   selTipo.innerHTML  = '<option value="">Todos los tipos</option>';
+
+  // Contar productos por marca para agrupar las que solo tienen 1
+  const marcaCount = {};
+  TODOS.forEach(p => { marcaCount[p.marca] = (marcaCount[p.marca] || 0) + 1; });
+
+  let tieneOtras = false;
   todasMarcas().forEach(m => {
+    if ((marcaCount[m] || 0) <= 1) { tieneOtras = true; return; }
     const o = document.createElement('option');
     o.value = m; o.textContent = m;
     if (m === mAct) o.selected = true;
     selMarca.appendChild(o);
   });
+  if (tieneOtras) {
+    const o = document.createElement('option');
+    o.value = '__otras__'; o.textContent = 'Otras marcas';
+    if (mAct === '__otras__') o.selected = true;
+    selMarca.appendChild(o);
+  }
+
   todosTipos().forEach(t => {
     const o = document.createElement('option');
     o.value = t; o.textContent = t;
@@ -1031,8 +1045,19 @@ function aplicarFiltros() {
   const busq  = document.getElementById('buscar').value.toLowerCase().trim();
   ordenActual = document.getElementById('sel-orden').value;
 
+  // Para el filtro "Otras marcas" necesitamos el conteo global
+  let marcaCount = null;
+  if (marca === '__otras__') {
+    marcaCount = {};
+    TODOS.forEach(p => { marcaCount[p.marca] = (marcaCount[p.marca] || 0) + 1; });
+  }
+
   let lista = TODOS.filter(p => {
-    if (marca && p.marca !== marca) return false;
+    if (marca) {
+      if (marca === '__otras__') {
+        if ((marcaCount[p.marca] || 0) > 1) return false;
+      } else if (p.marca !== marca) return false;
+    }
     if (tipo  && p.tipo  !== tipo)  return false;
     if (busq && !((p.descripcion+' '+p.codigo).toLowerCase().includes(busq))) return false;
     return true;
