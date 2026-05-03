@@ -14,7 +14,7 @@
   --gray:#F3F3F3;--dg:#666;
   --head:'Unbounded',sans-serif;--body:'Inter',sans-serif;
 }
-html,body{background:var(--offwhite);color:var(--black);font-family:var(--body);-webkit-text-size-adjust:100%}
+html,body{background:var(--offwhite);color:var(--black);font-family:var(--body);-webkit-text-size-adjust:100%;overflow-x:hidden}
 img{max-width:100%;display:block}
 
 /* NAV */
@@ -194,72 +194,108 @@ footer p{font-family:var(--head);font-size:8px;font-weight:700;letter-spacing:0.
 /* ===================== MOBILE ===================== */
 @media(max-width:640px){
 
-  nav{padding:0 1rem;height:52px}
-  .nav-logo{height:30px}
-  .nav-logo-pill{padding:4px 9px}
-  .navl{gap:.9rem}
-  .navl a{font-size:9px}
+  /* NAV */
+  nav{padding:0 .9rem;height:50px}
+  .nav-logo{height:28px}
+  .nav-logo-pill{padding:4px 8px}
+  .navl{gap:.6rem}
+  .navl a{font-size:8.5px;letter-spacing:.06em}
 
-  /* Hero apilado */
-  .hero{min-height:min(88vh,640px);background-position:center 40%}
-  .hero-inner{grid-template-columns:1fr;gap:1.2rem;padding:1.8rem 1.2rem}
-  .hero-logo-img{height:100px}
-  .hero-l h1{font-size:clamp(26px,8vw,40px);margin-bottom:.9rem}
-  .hero-l p{font-size:13px;margin-bottom:1.2rem;max-width:100%}
-  .btn-mg,.btn-out{font-size:10px;padding:12px 18px}
-  .hero-r{flex-direction:row;border-radius:10px}
-  .stat{border-bottom:none;border-right:1px solid rgba(255,255,255,0.09);padding:1.1rem 1.2rem;text-align:center;flex:1}
+  /* HERO */
+  .hero{
+    min-height:min(85vh,580px);
+    background-size:cover;
+    background-position:center center;
+  }
+  .hero-inner{grid-template-columns:1fr;gap:1rem;padding:1.5rem 1rem}
+  .hero-logo-img{height:90px}
+  .hero-l h1{font-size:clamp(24px,7.5vw,38px);margin-bottom:.8rem}
+  .hero-l p{font-size:12.5px;margin-bottom:1.1rem;max-width:100%}
+  .btn-mg,.btn-out{font-size:10px;padding:12px 16px;width:100%;text-align:center}
+  .hero-btns{flex-direction:column;gap:8px}
+  .hero-r{flex-direction:row;border-radius:8px}
+  .stat{border-bottom:none;border-right:1px solid rgba(255,255,255,0.09);padding:.9rem .6rem;text-align:center;flex:1;min-width:0}
   .stat:last-child{border-right:none}
-  .stat-n{font-size:24px}
-  .stat-l{font-size:9px}
+  .stat-n{font-size:20px}
+  .stat-l{font-size:8px;line-height:1.3;word-break:break-word}
 
-  /* Spray columna única */
-  .spray-inner{grid-template-columns:1fr;gap:1rem}
-  .spray-strip{padding:1.5rem 1rem}
+  /* TICKER */
+  .ti{font-size:9px;padding:0 1rem}
 
-  /* Marcas */
-  .brands-sec{padding:1.5rem 1rem}
-  .brands-cards{grid-template-columns:repeat(3,1fr);gap:8px}
-  .brand-card{padding:.7rem}
-  .brand-icon{width:32px;height:32px;font-size:13px}
+  /* SPRAY */
+  .spray-inner{grid-template-columns:1fr;gap:.9rem}
+  .spray-strip{padding:1.4rem 1rem}
+  .spray-strip h2{font-size:clamp(16px,5vw,24px)}
+  .spray-chip{gap:6px}
+  .chip{font-size:9px;padding:5px 10px}
+
+  /* MARCAS */
+  .brands-sec{padding:1.4rem 1rem}
+  .brands-cards{grid-template-columns:repeat(3,1fr);gap:7px}
+  .brand-card{padding:.65rem .5rem}
+  .brand-icon{width:30px;height:30px;font-size:13px}
   .brand-name{font-size:8px}
-  .brand-type{font-size:8px}
+  .brand-type{font-size:7.5px}
 
-  /* Catálogo */
-  .cat-sec{padding:1.5rem 1rem}
+  /* OFERTAS */
+  .ofertas-grid{grid-template-columns:repeat(2,1fr);gap:8px;padding:.9rem}
+  .oferta-card{border-width:1.5px}
+  .oferta-img,.oferta-img-placeholder{height:105px}
+  .oferta-body{padding:9px}
+  .oferta-nombre{font-size:9px}
+  .oferta-precio-nuevo{font-size:14px}
+  .oferta-precio-orig{font-size:11px}
+
+  /* CATÁLOGO */
+  .cat-sec{padding:1.4rem 1rem}
+  .cat-header{flex-wrap:wrap;gap:.5rem}
   .tabs{gap:5px}
   .tab{font-size:8px;padding:7px 10px}
   .grid{grid-template-columns:repeat(2,1fr);gap:8px}
-  .card{padding:.85rem}
-  .card-ico{font-size:22px}
+  .card{padding:.8rem}
+  .card-ico{font-size:20px;margin-bottom:6px}
   .card-name{font-size:10px}
   .card-desc{font-size:10px}
 
   /* WA */
-  .wa{padding:1rem;flex-direction:column;align-items:flex-start;gap:.7rem}
-  .wa-btn{width:100%;text-align:center;padding:12px}
+  .wa{padding:1rem;flex-direction:column;align-items:stretch;gap:.7rem}
+  .wa-btn{width:100%;text-align:center;padding:13px;font-size:11px}
 
-  /* Contacto apilado */
+  /* CONTACTO */
   .contact{grid-template-columns:1fr}
-  .contact-l{border-right:none;border-bottom:3px solid var(--black);padding:1.5rem 1rem}
-  .contact-l h2,.contact-r h2{font-size:15px}
-  .contact-r{padding:1.5rem 1rem}
+  .contact-l{border-right:none;border-bottom:3px solid var(--black);padding:1.4rem 1rem}
+  .contact-l h2,.contact-r h2{font-size:14px}
+  .contact-r{padding:1.4rem 1rem}
   .row2{grid-template-columns:1fr}
+  .horario-grid{gap:2px 8px}
+  .hd,.hh{font-size:11px}
+  .send-btn{padding:14px;font-size:12px}
 
-  /* Mapa */
-  .mapa-inner img{max-height:220px}
-  .mapa-overlay{flex-direction:column;align-items:flex-start;gap:.7rem;padding:1rem}
-  .mapa-btn{width:100%;text-align:center;padding:11px}
+  /* MAPA */
+  .mapa-inner img{max-height:210px}
+  .mapa-overlay{flex-direction:column;align-items:flex-start;gap:.6rem;padding:.9rem}
+  .mapa-btn{width:100%;text-align:center;padding:12px}
 
-  footer{padding:.9rem 1rem;flex-direction:column;align-items:center;gap:.3rem;text-align:center}
+  /* FOOTER */
+  footer{padding:.85rem 1rem;flex-direction:column;align-items:center;gap:.4rem;text-align:center}
+}
+
+@media(max-width:420px){
+  .brands-cards{grid-template-columns:repeat(2,1fr)}
+  .ofertas-grid{grid-template-columns:1fr}
+  .oferta-img,.oferta-img-placeholder{height:160px}
 }
 
 @media(max-width:380px){
+  nav{height:48px}
+  .nav-logo{height:26px}
+  .navl a{font-size:8px}
   .brands-cards{grid-template-columns:repeat(2,1fr)}
   .grid{grid-template-columns:1fr}
-  .hero-r{flex-direction:column;align-items:center;gap:1rem}
-  .stat{border-right:none;border-bottom:1px solid rgba(255,255,255,0.2);padding-bottom:1rem;margin-right:0;width:100%;text-align:center}
-  .stat:last-child{border-bottom:none;padding-bottom:0}
+  .hero-r{flex-direction:column;align-items:stretch;gap:0}
+  .stat{border-right:none;border-bottom:1px solid rgba(255,255,255,0.12);padding:.8rem 1rem;width:100%;text-align:center}
+  .stat:last-child{border-bottom:none}
+  .stat-n{font-size:22px}
 }
 </style>
 </head>
