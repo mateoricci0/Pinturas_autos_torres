@@ -1002,9 +1002,11 @@ function poblarSelects() {
   const marcaCount = {};
   TODOS.forEach(p => { marcaCount[p.marca] = (marcaCount[p.marca] || 0) + 1; });
 
+  const marcasFrecuentes = new Set();
   let tieneOtras = false;
   todasMarcas().forEach(m => {
     if ((marcaCount[m] || 0) <= 1) { tieneOtras = true; return; }
+    marcasFrecuentes.add(m);
     const o = document.createElement('option');
     o.value = m; o.textContent = m;
     if (m === mAct) o.selected = true;
@@ -1015,6 +1017,11 @@ function poblarSelects() {
     o.value = '__otras__'; o.textContent = 'Otras marcas';
     if (mAct === '__otras__') o.selected = true;
     selMarca.appendChild(o);
+  }
+
+  // Si la marca activa ya no existe como opción propia, resetear selección
+  if (mAct && mAct !== '__otras__' && !marcasFrecuentes.has(mAct)) {
+    selMarca.value = '';
   }
 
   todosTipos().forEach(t => {
