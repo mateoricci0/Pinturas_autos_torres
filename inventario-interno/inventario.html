@@ -937,7 +937,13 @@ async function guardarCorreccion(key, marca, tipo) {
   setIndicador('guardando');
   try {
     manuales.add(key);
-    const { error } = await sb.from(TABLA).upsert(
+    const { data: { session } } = await sb.auth.getSession();
+    const headers = session ? { Authorization: `Bearer ${session.access_token}` } : {};
+    const sbWrite = supabase.createClient(SB_URL, SB_KEY, {
+      global: { headers },
+      auth: { persistSession: false }
+    });
+    const { error } = await sbWrite.from(TABLA).upsert(
       { codigo: key, marca, tipo, fuente: 'manual', actualizado_at: new Date().toISOString() },
       { onConflict: 'codigo' }
     );
@@ -1701,7 +1707,18 @@ async function clasificarConIA() {
 
   try {
     const { data: { session } } = await sb.auth.getSession();
-    const token = session ? session.access_token : SB_KEY;
+    if (!session) {
+      mostrarToast('⚠️ Debes iniciar sesión para guardar clasificaciones.');
+      btn.disabled = false;
+      btn.innerHTML = textoOrig;
+      return;
+    }
+    const token = session.access_token;
+    // Cliente con token de sesión explícito para garantizar rol 'authenticated' en upserts
+    const sbAuth = supabase.createClient(SB_URL, SB_KEY, {
+      global: { headers: { Authorization: `Bearer ${token}` } },
+      auth: { persistSession: false }
+    });
 
     let guardados = 0;
     let procesados = 0;
@@ -1721,7 +1738,7 @@ async function clasificarConIA() {
     }
     if (basesUpserts.length > 0) {
       for (let i = 0; i < basesUpserts.length; i += 200) {
-        const { error: baseErr } = await sb.from(TABLA).upsert(basesUpserts.slice(i, i + 200), { onConflict: 'codigo' });
+        const { error: baseErr } = await sbAuth.from(TABLA).upsert(basesUpserts.slice(i, i + 200), { onConflict: 'codigo' });
         if (baseErr) console.error('Error guardando bases colorimétricas:', baseErr);
       }
     }
@@ -1759,7 +1776,7 @@ async function clasificarConIA() {
           }
         }
         if (upserts.length > 0) {
-          const { error: upsertErr } = await sb.from(TABLA).upsert(upserts, { onConflict: 'codigo' });
+          const { error: upsertErr } = await sbAuth.from(TABLA).upsert(upserts, { onConflict: 'codigo' });
           if (upsertErr) {
             console.error('Error guardando clasificaciones IA:', upsertErr);
             mostrarToast('⚠️ Error guardando lote en la nube: ' + upsertErr.message);
