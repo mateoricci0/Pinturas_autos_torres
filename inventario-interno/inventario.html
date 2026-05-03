@@ -849,12 +849,32 @@ async function guardarInventarioEnNube(productos) {
     subido_at:    ts,
   }));
 
+  // Obtener sesión para autenticar
+  const { data: { session: sess } } = await sb.auth.getSession();
+  const token = sess ? sess.access_token : SB_KEY;
+
   // Upsert en lotes de 200
   for (let i = 0; i < filas.length; i += 200) {
-    await sb.from('inventario_productos').upsert(filas.slice(i, i + 200), { onConflict: '_key' });
+    const batch = filas.slice(i, i + 200);
+    await fetch(`${SB_URL}/rest/v1/inventario_productos?on_conflict=_key`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        'apikey': SB_KEY,
+        'Prefer': 'resolution=merge-duplicates,return=minimal'
+      },
+      body: JSON.stringify(batch)
+    });
   }
   // Borrar productos que ya no están en el XLS actual
-  await sb.from('inventario_productos').delete().lt('subido_at', ts);
+  await fetch(`${SB_URL}/rest/v1/inventario_productos?subido_at=lt.${ts}`, {
+    method: 'DELETE',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'apikey': SB_KEY
+    }
+  });
 }
 
 async function cargarInventarioDesdeNube() {
@@ -996,7 +1016,15 @@ async function eliminarProducto(key) {
   mostrarToast('Producto eliminado. Reaparecerá si vuelve en el próximo XLS.');
   // Borrar su corrección de Supabase para que vuelva limpio la próxima vez
   try {
-    await sb.from(TABLA).delete().eq('codigo', key);
+    const { data: { session: sess } } = await sb.auth.getSession();
+    const token = sess ? sess.access_token : SB_KEY;
+    await fetch(`${SB_URL}/rest/v1/${TABLA}?codigo=eq.${key}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'apikey': SB_KEY
+      }
+    });
   } catch (err) {
     console.warn('No se pudo borrar de Supabase:', err.message);
   }
@@ -1589,9 +1617,20 @@ async function eliminarOferta(codigo) {
   const btn = item?.querySelector('.btn-oferta-del');
   if (btn) { btn.disabled = true; btn.textContent = 'Borrando...'; }
   
-  const { error } = await sb.from('ofertas').delete().eq('codigo', codigo);
-  if (error) {
-    mostrarToast('Error al eliminar: ' + error.message);
+  const { data: { session: sess } } = await sb.auth.getSession();
+  const token = sess ? sess.access_token : SB_KEY;
+
+  const res = await fetch(`${SB_URL}/rest/v1/ofertas?codigo=eq.${codigo}`, {
+    method: 'DELETE',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'apikey': SB_KEY
+    }
+  });
+
+  if (!res.ok) {
+    const errData = await res.json();
+    mostrarToast('Error al eliminar: ' + errData.message);
     if (btn) { btn.disabled = false; btn.textContent = '🗑️ Eliminar'; }
   } else {
     mostrarToast('Oferta eliminada correctamente');
