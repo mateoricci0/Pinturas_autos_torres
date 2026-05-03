@@ -938,16 +938,23 @@ async function guardarCorreccion(key, marca, tipo) {
   try {
     manuales.add(key);
     const { data: { session } } = await sb.auth.getSession();
-    const headers = session ? { Authorization: `Bearer ${session.access_token}` } : {};
-    const sbWrite = supabase.createClient(SB_URL, SB_KEY, {
-      global: { headers },
-      auth: { persistSession: false }
+    const token = session ? session.access_token : SB_KEY;
+
+    const res = await fetch(`${SB_URL}/rest/v1/${TABLA}?on_conflict=codigo`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        'apikey': SB_KEY,
+        'Prefer': 'resolution=merge-duplicates,return=minimal'
+      },
+      body: JSON.stringify({ codigo: key, marca, tipo, fuente: 'manual', actualizado_at: new Date().toISOString() })
     });
-    const { error } = await sbWrite.from(TABLA).upsert(
-      { codigo: key, marca, tipo, fuente: 'manual', actualizado_at: new Date().toISOString() },
-      { onConflict: 'codigo' }
-    );
-    if (error) throw error;
+
+    if (!res.ok) {
+      const errData = await res.json();
+      throw new Error(errData.message || 'Error al guardar');
+    }
     localStorage.setItem(LS_KEY, JSON.stringify(correcciones));
     setIndicador('ok');
   } catch (err) {
@@ -1670,9 +1677,20 @@ async function confirmarSubirOfertas() {
     };
     if (foto_url) registro.foto_url = foto_url;
 
-    const { error: dbErr } = await sb.from('ofertas').upsert(registro, { onConflict: 'codigo' });
-    if (dbErr) {
-      log.textContent += `  ✗ Error BD: ${dbErr.message}\n`;
+    const res = await fetch(`${SB_URL}/rest/v1/ofertas?on_conflict=codigo`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${sess.access_token}`,
+        'apikey': SB_KEY,
+        'Prefer': 'resolution=merge-duplicates,return=minimal'
+      },
+      body: JSON.stringify(registro)
+    });
+
+    if (!res.ok) {
+      const errData = await res.json();
+      log.textContent += `  ✗ Error BD: ${errData.message}\n`;
       errores++;
     } else {
       log.textContent += `  ✓ Publicado en oferta\n`;
@@ -1714,11 +1732,6 @@ async function clasificarConIA() {
       return;
     }
     const token = session.access_token;
-    // Cliente con token de sesión explícito para garantizar rol 'authenticated' en upserts
-    const sbAuth = supabase.createClient(SB_URL, SB_KEY, {
-      global: { headers: { Authorization: `Bearer ${token}` } },
-      auth: { persistSession: false }
-    });
 
     let guardados = 0;
     let procesados = 0;
@@ -1738,8 +1751,18 @@ async function clasificarConIA() {
     }
     if (basesUpserts.length > 0) {
       for (let i = 0; i < basesUpserts.length; i += 200) {
-        const { error: baseErr } = await sbAuth.from(TABLA).upsert(basesUpserts.slice(i, i + 200), { onConflict: 'codigo' });
-        if (baseErr) console.error('Error guardando bases colorimétricas:', baseErr);
+        const batchBases = basesUpserts.slice(i, i + 200);
+        const resB = await fetch(`${SB_URL}/rest/v1/${TABLA}?on_conflict=codigo`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+            'apikey': SB_KEY,
+            'Prefer': 'resolution=merge-duplicates,return=minimal'
+          },
+          body: JSON.stringify(batchBases)
+        });
+        if (!resB.ok) console.error('Error guardando bases colorimétricas:', await resB.json());
       }
     }
     procesados += basesUpserts.length;
@@ -1776,10 +1799,20 @@ async function clasificarConIA() {
           }
         }
         if (upserts.length > 0) {
-          const { error: upsertErr } = await sbAuth.from(TABLA).upsert(upserts, { onConflict: 'codigo' });
-          if (upsertErr) {
-            console.error('Error guardando clasificaciones IA:', upsertErr);
-            mostrarToast('⚠️ Error guardando lote en la nube: ' + upsertErr.message);
+          const resUp = await fetch(`${SB_URL}/rest/v1/${TABLA}?on_conflict=codigo`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`,
+              'apikey': SB_KEY,
+              'Prefer': 'resolution=merge-duplicates,return=minimal'
+            },
+            body: JSON.stringify(upserts)
+          });
+          if (!resUp.ok) {
+            const errData = await resUp.json();
+            console.error('Error guardando clasificaciones IA:', errData);
+            mostrarToast('⚠️ Error guardando lote en la nube: ' + errData.message);
           }
           localStorage.setItem(LS_KEY, JSON.stringify(correcciones));
         }
