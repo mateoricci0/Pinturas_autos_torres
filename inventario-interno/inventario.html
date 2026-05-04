@@ -958,13 +958,13 @@ async function guardarCorreccion(key, marca, tipo) {
   try {
     manuales.add(key);
     const { data: { session } } = await sb.auth.getSession();
-    const token = session ? session.access_token : SB_KEY;
+    if (!session) throw new Error('sin sesión');
 
     const res = await fetch(`${SB_URL}/rest/v1/${TABLA}?on_conflict=codigo`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
+        'Authorization': `Bearer ${session.access_token}`,
         'apikey': SB_KEY,
         'Prefer': 'resolution=merge-duplicates,return=minimal'
       },
