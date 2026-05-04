@@ -78,6 +78,8 @@ select:focus,input[type=text]:focus{border-color:var(--mg)}
   cursor:pointer;transition:background .15s;white-space:nowrap}
 .btn-out{background:var(--white);color:var(--black);border:2px solid #ddd}
 .btn-out:hover{border-color:var(--mg);color:var(--mg)}
+.btn-mg{background:var(--mg);color:var(--white);border:2px solid var(--mg)}
+.btn-mg:hover{background:var(--mg2);border-color:var(--mg2)}
 .btn-primary{background:var(--mg);color:var(--white)}
 .btn-primary:hover{background:var(--mg2)}
 .btn-primary:disabled{background:#ccc;cursor:not-allowed}
@@ -202,6 +204,25 @@ td.stock{text-align:center;font-weight:600}
 .modal-stats div{display:flex;justify-content:space-between;padding:3px 0}
 .modal-stats b{color:var(--mg)}
 .modal-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:1rem}
+/* ── BOTÓN AYUDA ── */
+.btn-help{background:rgba(255,255,255,0.2);border:1.5px solid rgba(255,255,255,0.4);
+  color:var(--white);font-size:13px;font-weight:700;width:28px;height:28px;border-radius:50%;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  transition:background .15s}
+.btn-help:hover{background:rgba(255,255,255,0.35)}
+/* ── MODAL AYUDA ── */
+.ayuda-paso{display:flex;gap:.85rem;align-items:flex-start;margin-bottom:1rem}
+.ayuda-num{background:var(--mg);color:var(--white);font-family:var(--head);font-size:11px;
+  font-weight:900;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;flex-shrink:0;margin-top:1px}
+.ayuda-texto{font-size:13px;line-height:1.5;color:#333}
+.ayuda-texto strong{color:var(--black)}
+.ayuda-tip{background:#FFF8E7;border:1.5px solid #FFB300;border-radius:8px;
+  padding:.6rem .85rem;font-size:12px;color:#555;margin-top:.5rem}
+/* ── MODAL CONFIRM ── */
+.confirm-icon{font-size:2.5rem;text-align:center;margin-bottom:.5rem}
+.confirm-msg{font-size:14px;line-height:1.6;text-align:center;color:#333;margin-bottom:.25rem}
+.confirm-sub{font-size:12px;text-align:center;color:var(--dg);margin-bottom:1.25rem}
 .modal-log{background:#0D0D0D;color:#0F0;font-family:monospace;font-size:11px;
   padding:.75rem;border-radius:6px;max-height:200px;overflow:auto;margin-bottom:1rem;white-space:pre-wrap}
 
@@ -306,6 +327,76 @@ td.stock{text-align:center;font-weight:600}
     <span class="user-email" id="user-email" style="display:none"></span>
     <button class="btn-pass" id="btn-pass" style="display:none" onclick="abrirModalPass()">Contraseña</button>
     <button class="btn-logout" id="btn-logout" style="display:none" onclick="cerrarSesion()">Cerrar sesión</button>
+    <button class="btn-help" onclick="abrirAyuda()" title="Cómo usar esta herramienta">?</button>
+  </div>
+</div>
+
+<!-- MODAL AYUDA -->
+<div class="modal-bg" id="modal-ayuda" onclick="if(event.target===this)cerrarAyuda()">
+  <div class="modal" style="max-width:560px">
+    <h3>Cómo usar el inventario</h3>
+
+    <div class="ayuda-paso">
+      <div class="ayuda-num">1</div>
+      <div class="ayuda-texto">
+        <strong>Exporta el inventario desde TPVSol</strong><br>
+        En TPVSol ve a <em>Informes → Inventario</em> y exporta en formato XLS o XLSX.
+      </div>
+    </div>
+
+    <div class="ayuda-paso">
+      <div class="ayuda-num">2</div>
+      <div class="ayuda-texto">
+        <strong>Sube el archivo aquí</strong><br>
+        Arrástralo a la pantalla o pulsa "Seleccionar archivo". El inventario se carga en segundos.
+        <div class="ayuda-tip">Cada vez que exportes un nuevo XLS de TPVSol y lo subas, el inventario se actualiza automáticamente. Las clasificaciones guardadas no se pierden.</div>
+      </div>
+    </div>
+
+    <div class="ayuda-paso">
+      <div class="ayuda-num">3</div>
+      <div class="ayuda-texto">
+        <strong>Clasifica con IA (botón ✨ Clasificar)</strong><br>
+        La inteligencia artificial analiza cada producto y le asigna marca y tipo automáticamente. Tarda unos minutos según el tamaño del inventario.
+        <div class="ayuda-tip">Solo necesitas hacerlo una vez. Los nuevos XLS que subas conservarán las clasificaciones anteriores.</div>
+      </div>
+    </div>
+
+    <div class="ayuda-paso">
+      <div class="ayuda-num">4</div>
+      <div class="ayuda-texto">
+        <strong>Corrige lo que no esté bien</strong><br>
+        Haz clic en cualquier producto para editar su marca o tipo manualmente. Los cambios manuales no los sobreescribe la IA.
+      </div>
+    </div>
+
+    <div class="ayuda-paso">
+      <div class="ayuda-num">5</div>
+      <div class="ayuda-texto">
+        <strong>Gestiona las ofertas (botón ★ Ofertas)</strong><br>
+        Marca productos con el checkbox de oferta, añade foto y precio especial. Las ofertas aparecen en la web pública de la tienda.
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-mg" onclick="cerrarAyuda()">Entendido</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CONFIRMAR CAMBIO DE XLS -->
+<div class="modal-bg" id="modal-confirm-xls">
+  <div class="modal" style="max-width:420px">
+    <div class="confirm-icon">⚠️</div>
+    <p class="confirm-msg"><strong>¿Reemplazar el inventario actual?</strong></p>
+    <p class="confirm-sub">
+      El nuevo XLS sustituirá los <span id="confirm-n-productos">0</span> productos cargados.<br>
+      Las clasificaciones y correcciones guardadas <strong>no se perderán</strong>.
+    </p>
+    <div class="modal-actions">
+      <button class="btn btn-out" onclick="cerrarConfirmXLS()">Cancelar</button>
+      <button class="btn btn-mg" onclick="confirmarCambioXLS()">Sí, cargar nuevo XLS</button>
+    </div>
   </div>
 </div>
 
@@ -902,7 +993,25 @@ fileInput.addEventListener('change', e => {
   if (e.target.files && e.target.files[0]) procesarArchivo(e.target.files[0]);
 });
 
-function abrirCargaXLS() { fileInput.click(); }
+function abrirCargaXLS() {
+  if (TODOS.length > 0) {
+    document.getElementById('confirm-n-productos').textContent = TODOS.length;
+    document.getElementById('modal-confirm-xls').classList.add('show');
+  } else {
+    fileInput.click();
+  }
+}
+function cerrarConfirmXLS() {
+  document.getElementById('modal-confirm-xls').classList.remove('show');
+  fileInput.value = '';
+}
+function confirmarCambioXLS() {
+  document.getElementById('modal-confirm-xls').classList.remove('show');
+  fileInput.click();
+}
+
+function abrirAyuda()  { document.getElementById('modal-ayuda').classList.add('show'); }
+function cerrarAyuda() { document.getElementById('modal-ayuda').classList.remove('show'); }
 
 async function procesarArchivo(file) {
   try {
