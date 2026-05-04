@@ -485,6 +485,105 @@ function detectarMarca(desc) {
   return "Sin marca";
 }
 
+/* ══════════════════════════════════════════════
+   LIMPIEZA DE DATOS  (equivalente a pandas)
+   Se aplica al cargar el XLS, antes de la IA.
+   ══════════════════════════════════════════════
+
+   pandas → JS
+   ─────────────────────────────────────────────
+   str.strip()                → .trim()
+   replace({'A':'B'})         → diccionario MARCAS_ALIAS
+   apply(detectar_marca)      → MARCAS_EN_DESC.find(...)
+   fillna(valor_detectado)    → || marca_detectada
+   drop_duplicates()          → filter con Set de códigos
+   dropna(subset=['desc'])    → filter descripción vacía
+   ─────────────────────────────────────────────  */
+
+// Normalización de grafías incorrectas (pandas: df.replace({...}))
+const MARCAS_ALIAS = {
+  'FRANCHI&KIM':        'Franchi & Kim',
+  'FRANCHI & KIM':      'Franchi & Kim',
+  'F&K':                'Franchi & Kim',
+  'SHINEMATE':          'Shine-Mate',
+  'SHINE-MATE':         'Shine-Mate',
+  'CSR':                'CRS',           // grafía incorrecta frecuente
+  'CROMAUTO':           'Kenda',         // Cromauto es la gama de Kenda
+  'KENDA CROMAUTO':     'Kenda',
+};
+
+// Patrones para detectar marca desde la descripción (pandas: apply(detectar_marca))
+// Orden importa: primero los más específicos
+const MARCAS_EN_DESC = [
+  { re: /\b3M\b/,                   marca: '3M'           },
+  { re: /\bSIKKENS\b/,              marca: 'Sikkens'      },
+  { re: /\bNOVOL\b/,                marca: 'Novol'        },
+  { re: /\bCROMAUTO\b/,             marca: 'Kenda'        },
+  { re: /\bSAGOLA\b/,               marca: 'Sagola'       },
+  { re: /\bMETABO\b/,               marca: 'Metabo'       },
+  { re: /\bNUAIR\b/,                marca: 'Nuair'        },
+  { re: /\bAIRUM\b/,                marca: 'Airum'        },
+  { re: /\bVERMAAT\b/,              marca: 'Vermaat'      },
+  { re: /\bFULL[\s-]?DIP\b/,       marca: 'Full Dip'     },
+  { re: /\bINDASA\b/,               marca: 'Indasa'       },
+  { re: /\bRUPES\b/,                marca: 'Rupes'        },
+  { re: /\bSATA\b/,                 marca: 'Sata'         },
+  { re: /\bIWATA\b/,                marca: 'Iwata'        },
+  { re: /\bPROSOL\b/,               marca: 'Prosol'       },
+  { re: /\bUPOL\b/,                 marca: 'Upol'         },
+  { re: /\bSPECTRAL\b/,             marca: 'Spectral'     },
+  { re: /\bBESSA\b|\bBESA\b/,       marca: 'Besa'         },
+  { re: /\bCRS\b/,                  marca: 'CRS'          },
+  { re: /\bBOSSAUTO\b/,             marca: 'Bossauto'     },
+  { re: /\bHIFESON\b/,              marca: 'Hifeson'      },
+  { re: /\bCARTEC\b/,               marca: 'Cartec'       },
+  { re: /\bHARRIS\b/,               marca: 'Harris'       },
+  { re: /\bSEIKAR\b/,               marca: 'Seikar'       },
+  { re: /\bF&K\b|\bFRANCHI\b/,      marca: 'Franchi & Kim'},
+  { re: /\bABEKI\b/,                marca: 'Abeki'        },
+  { re: /\bRHYNO\b/,                marca: 'Rhyno'        },
+  { re: /\bSISTAR\b/,               marca: 'Sistar'       },
+  { re: /\bVALLEJO\b/,              marca: 'Vallejo'      },
+];
+
+function limpiarProductos(productos) {
+  const vistos = new Set();
+
+  return productos
+    // 1. Eliminar filas sin descripción (pandas: dropna(subset=['descripcion']))
+    .filter(p => (p.descripcion || '').trim().length > 0)
+
+    // 2. Eliminar duplicados por código (pandas: drop_duplicates(subset=['codigo']))
+    .filter(p => {
+      const k = (p.codigo || p.descripcion || '').trim().toUpperCase();
+      if (vistos.has(k)) return false;
+      vistos.add(k);
+      return true;
+    })
+
+    // 3. Limpiar y normalizar cada fila (pandas: apply sobre columnas string)
+    .map(p => {
+      // str.strip() en descripción y marca
+      const desc  = (p.descripcion || '').trim().replace(/\s+/g, ' ');
+      const descU = desc.toUpperCase();
+      let   marca = (p.marca || '').trim().replace(/\s+/g, ' ');
+      const marcaU = marca.toUpperCase();
+
+      // Normalizar grafía de marca (pandas: replace({'alias': 'canónica'}))
+      if (MARCAS_ALIAS[marcaU]) marca = MARCAS_ALIAS[marcaU];
+
+      // Si la marca está vacía o es genérica, intentar detectarla en la descripción
+      // (pandas: fillna con apply(detectar_marca))
+      const marcaVacia = !marca || marca === 'Sin marca' || marca === '-' || marca === '?';
+      if (marcaVacia) {
+        const encontrada = MARCAS_EN_DESC.find(m => m.re.test(descU));
+        if (encontrada) marca = encontrada.marca;
+      }
+
+      return { ...p, descripcion: desc, marca: marca || p.marca };
+    });
+}
+
 /* ──────────────────────────────────────────────
    BASES COLORIMÉTRICAS (excluidas del catálogo web)
    Regla principal: descripción empieza por "BASE ".
@@ -816,7 +915,7 @@ async function procesarArchivo(file) {
    INICIALIZACIÓN TRAS CARGAR XLS
    ────────────────────────────────────────────── */
 function inicializarConDatos(productos, desdeNube = false) {
-  TODOS_ORIG = productos;
+  TODOS_ORIG = limpiarProductos(productos);
   MARCAS_BASE = [...new Set(productos.map(p => p.marca))].sort();
   TIPOS_BASE  = [...new Set(productos.map(p => normalizarTipo(p.tipo)))].sort();
 
