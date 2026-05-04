@@ -1776,10 +1776,12 @@ async function clasificarConIA() {
     let procesados = 0;
     const BATCH_SIZE = 25;
 
-    // 1. Auto-clasificar bases colorimétricas sin llamar a la IA
+    // 1. Auto-clasificar bases SIN precio (son las de mezcla interna, no se venden)
+    // Las bases CON precio son productos normales → las clasifica la IA
     const basesUpserts = [];
     for (const p of TODOS) {
       if (!esBaseColorimetrica(p.descripcion)) continue;
+      if ((p.precio_venta || 0) > 0 || (p.precio_costo || 0) > 0) continue; // tiene precio → la IA la clasifica
       if (manuales.has(p._key)) continue; // respetar manuales
       correcciones[p._key] = { marca: p.marca, tipo: 'Base colorimétrica' };
       basesUpserts.push({
@@ -1807,9 +1809,14 @@ async function clasificarConIA() {
     procesados += basesUpserts.length;
     btn.innerHTML = `✨ (${procesados}/${total})`;
 
-    // 2. Clasificar el resto con la IA (saltando manuales)
+    // 2. Clasificar el resto con la IA (saltando manuales y bases sin precio ya auto-clasificadas)
     const payload = TODOS
-      .filter(p => !esBaseColorimetrica(p.descripcion) && !manuales.has(p._key))
+      .filter(p => {
+        if (manuales.has(p._key)) return false;
+        // excluir solo las bases de mezcla (sin precio): ya se auto-clasificaron arriba
+        if (esBaseColorimetrica(p.descripcion) && (p.precio_venta || 0) === 0 && (p.precio_costo || 0) === 0) return false;
+        return true;
+      })
       .map(p => ({ id: p._key, desc: p.descripcion }));
 
     for (let i = 0; i < payload.length; i += BATCH_SIZE) {
