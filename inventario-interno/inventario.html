@@ -510,6 +510,10 @@ const MARCAS_ALIAS = {
   'CSR':                'CRS',           // grafía incorrecta frecuente
   'CROMAUTO':           'Kenda',         // Cromauto es la gama de Kenda
   'KENDA CROMAUTO':     'Kenda',
+  'FULL DIPP':          'Full Dip',
+  'FULLDIPP':           'Full Dip',
+  'FULLDIP':            'Full Dip',
+  'MIARCOS':            'Miarco',
 };
 
 // Patrones para detectar marca desde la descripción (pandas: apply(detectar_marca))
@@ -524,7 +528,7 @@ const MARCAS_EN_DESC = [
   { re: /\bNUAIR\b/,                marca: 'Nuair'        },
   { re: /\bAIRUM\b/,                marca: 'Airum'        },
   { re: /\bVERMAAT\b/,              marca: 'Vermaat'      },
-  { re: /\bFULL[\s-]?DIP\b/,       marca: 'Full Dip'     },
+  { re: /\bFULL[\s-]?DIPP?\b/,      marca: 'Full Dip'     },
   { re: /\bINDASA\b/,               marca: 'Indasa'       },
   { re: /\bRUPES\b/,                marca: 'Rupes'        },
   { re: /\bSATA\b/,                 marca: 'Sata'         },
