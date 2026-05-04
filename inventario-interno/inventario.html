@@ -544,6 +544,12 @@ const MARCAS_EN_DESC = [
   { re: /\bRHYNO\b/,                marca: 'Rhyno'        },
   { re: /\bSISTAR\b/,               marca: 'Sistar'       },
   { re: /\bVALLEJO\b/,              marca: 'Vallejo'      },
+  { re: /\bWANDA\b/,                marca: 'Wanda'        },
+  { re: /\bPERFECT[\s-]LINE\b/,     marca: 'Perfect Line' },
+  { re: /\bMIARCO\b/,               marca: 'Miarco'       },
+  { re: /\bBOSSEAL\b/,              marca: 'Bosseal'      },
+  { re: /\bDISMOER\b/,              marca: 'Dismoer'      },
+  { re: /\bTITANIA\b/,              marca: 'Titania'      },
 ];
 
 function limpiarProductos(productos) {
@@ -1849,6 +1855,47 @@ async function confirmarSubirOfertas() {
 }
 
 // ── CLASIFICACIÓN ──
+// Agrupa en "Otras marcas" las que tienen ≤5 productos tras la clasificación.
+// Equivale a un pandas groupby + filter + replace sobre el resultado final.
+async function consolidarMarcasChicas(token) {
+  // Contar ocurrencias por marca en memoria (pandas: value_counts())
+  const conteo = {};
+  for (const c of Object.values(correcciones)) {
+    const m = c.marca;
+    if (m && m !== 'Sin marca' && m !== 'Otras marcas') {
+      conteo[m] = (conteo[m] || 0) + 1;
+    }
+  }
+
+  // Marcas con ≤5 productos (pandas: df[df['n'] <= 5])
+  const chicas = new Set(Object.entries(conteo).filter(([,n]) => n <= 5).map(([m]) => m));
+  if (chicas.size === 0) return;
+
+  // Actualizar en memoria y preparar upserts (pandas: df.replace({'marca_chica': 'Otras marcas'}))
+  const upserts = [];
+  for (const [codigo, c] of Object.entries(correcciones)) {
+    if (chicas.has(c.marca)) {
+      correcciones[codigo] = { ...c, marca: 'Otras marcas' };
+      upserts.push({ codigo, marca: 'Otras marcas', tipo: c.tipo,
+                     fuente: 'ia', actualizado_at: new Date().toISOString() });
+    }
+  }
+
+  // Guardar en BD en lotes
+  for (let i = 0; i < upserts.length; i += 200) {
+    await fetch(`${SB_URL}/rest/v1/${TABLA}?on_conflict=codigo`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        'apikey': SB_KEY,
+        'Prefer': 'resolution=merge-duplicates,return=minimal'
+      },
+      body: JSON.stringify(upserts.slice(i, i + 200))
+    });
+  }
+}
+
 async function clasificarConIA() {
   const btn = document.getElementById('btn-ia');
 
@@ -1973,6 +2020,9 @@ async function clasificarConIA() {
         }
       }
     }
+
+    // Consolidar marcas con ≤5 productos → "Otras marcas"
+    await consolidarMarcasChicas(token);
 
     aplicarCorreccionesADatos();
     poblarSelects();
