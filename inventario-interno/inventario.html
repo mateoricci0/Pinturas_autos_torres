@@ -1934,11 +1934,21 @@ async function clasificarConIA() {
       const { resultados } = await res.json();
 
       if (resultados && Array.isArray(resultados)) {
+        // Índice rápido de productos limpios para resolver marca cuando la IA devuelve "Sin marca"
+        const productosPorKey = Object.fromEntries(TODOS.map(p => [p._key, p]));
+
         const upserts = [];
         for (const r of resultados) {
           if (r.marca && r.tipo) {
-            correcciones[r.id] = { marca: r.marca, tipo: r.tipo };
-            upserts.push({ codigo: r.id, marca: r.marca, tipo: r.tipo,
+            // Si la IA no identificó la marca pero la limpieza de datos sí,
+            // usamos la marca detectada (fillna equivalente en pandas)
+            const prod = productosPorKey[r.id];
+            const marcaFinal = (r.marca === 'Sin marca' && prod?.marca && prod.marca !== 'Sin marca')
+              ? prod.marca
+              : r.marca;
+
+            correcciones[r.id] = { marca: marcaFinal, tipo: r.tipo };
+            upserts.push({ codigo: r.id, marca: marcaFinal, tipo: r.tipo,
                            fuente: 'ia', actualizado_at: new Date().toISOString() });
             guardados++;
           }
