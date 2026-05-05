@@ -107,6 +107,13 @@ td.chk-col{text-align:center;padding:9px 8px}
 thead th.chk-col{text-align:center;padding:10px 8px}
 tr.en-oferta{background:#FFF8E1!important}
 tr.en-oferta:hover{background:#FFF3CD!important}
+tr.en-catalogo{background:#E8F5E9!important}
+tr.en-catalogo:hover{background:#C8E6C9!important}
+tr.en-oferta.en-catalogo{background:linear-gradient(90deg,#FFF8E1 50%,#E8F5E9 50%)!important}
+.btn-catalogo{background:#1A6FA8;color:var(--white)}
+.btn-catalogo:hover{background:#155A8A}
+.cat-count-badge{background:#1A6FA8;color:#fff;border-radius:10px;font-size:9px;padding:2px 7px;margin-left:4px;font-family:var(--head);font-weight:700}
+.chk-catalogo{width:16px;height:16px;accent-color:#1A6FA8;cursor:pointer}
 
 /* ── MODAL OFERTAS ── */
 .oferta-item{border:1.5px solid #e0e0e0;border-radius:8px;padding:12px;margin-bottom:10px;background:#FAFAFA}
@@ -443,6 +450,7 @@ td.stock{text-align:center;font-weight:600}
     <button class="btn btn-ghost" onclick="abrirCargaXLS()">Cambiar XLS</button>
     <button class="btn btn-ghost" id="btn-ia" onclick="clasificarConIA()" style="color:#8E44AD;border-color:#8E44AD">✨ Clasificar</button>
     <button class="btn btn-oferta" id="btn-ofertas" onclick="abrirModalOfertas()">★ Ofertas <span class="oferta-count-badge" id="oferta-badge" style="display:none">0</span></button>
+    <button class="btn btn-catalogo" id="btn-catalogo" onclick="abrirModalCatalogo()">📋 Catálogo <span class="cat-count-badge" id="cat-badge" style="display:none">0</span></button>
   </div>
 </div>
 
@@ -452,6 +460,7 @@ td.stock{text-align:center;font-weight:600}
   <table>
     <thead><tr>
       <th class="chk-col" title="Añadir a oferta">★</th>
+      <th class="chk-col" title="Añadir al catálogo">📋</th>
       <th>Código</th>
       <th>Descripción</th>
       <th title="Haz clic en el badge para editar">Marca ✏</th>
@@ -497,6 +506,24 @@ td.stock{text-align:center;font-weight:600}
     <div class="modal-actions">
       <button class="btn btn-out" onclick="cerrarModalOfertas()" id="btn-ofertas-cancel">Cerrar</button>
       <button class="btn btn-oferta" id="btn-ofertas-confirm" onclick="confirmarSubirOfertas()">★ Publicar nuevas</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Catálogo -->
+<div class="modal-bg" id="modal-catalogo">
+  <div class="modal" style="max-width:600px">
+    <h3>📋 Catálogo de Productos</h3>
+    <p style="margin-bottom:1rem;font-size:12px">Elige los productos que quieres mostrar en el catálogo público. Solo se muestra la foto y el nombre, sin precio.</p>
+    <div id="catalogo-lista"></div>
+    <div id="catalogo-activos-lista" style="margin-top:1.5rem;border-top:2px solid #eee;padding-top:1rem;display:none">
+      <h4 style="font-family:var(--head);font-size:12px;margin-bottom:10px;color:var(--dg)">Productos actualmente en el catálogo</h4>
+      <div id="catalogo-activos-container"></div>
+    </div>
+    <div class="modal-log" id="catalogo-log" style="display:none"></div>
+    <div class="modal-actions">
+      <button class="btn btn-out" onclick="cerrarModalCatalogo()" id="btn-catalogo-cancel">Cerrar</button>
+      <button class="btn btn-catalogo" id="btn-catalogo-confirm" onclick="confirmarSubirCatalogo()">📋 Publicar en catálogo</button>
     </div>
   </div>
 </div>
@@ -1169,6 +1196,7 @@ async function cargarCorrecciones() {
   aplicarCorreccionesADatos();
   poblarSelects();
   aplicarFiltros();
+  cargarCatalogoInicial();
 }
 
 async function guardarCorreccion(key, marca, tipo) {
@@ -1390,11 +1418,20 @@ function renderTabla(lista) {
     const bTipo = `<span class="badge ${badgeClass(p.tipo,'tipo')}${tEdit?' badge-editado':''}"
       onclick="abrirPopover(event,${p._idx},'tipo')" title="Clic para cambiar el tipo">
       ${escapeHtml(p.tipo)} ${tEdit?lapiz:''}</span>`;
-    const enOferta = ofertasSeleccionadas.has(p._key);
-    return `<tr class="${enOferta ? 'en-oferta' : ''}">
+    const enOferta   = ofertasSeleccionadas.has(p._key);
+    const enCatalogo = catalogoSeleccionados.has(p._key);
+    let rowClass = '';
+    if (enOferta && enCatalogo) rowClass = 'en-oferta en-catalogo';
+    else if (enOferta) rowClass = 'en-oferta';
+    else if (enCatalogo) rowClass = 'en-catalogo';
+    return `<tr class="${rowClass}">
       <td class="chk-col">
         <input type="checkbox" class="chk-oferta" ${enOferta ? 'checked' : ''}
           onchange="toggleOferta('${escapeHtml(p._key)}',${p._idx},this.checked)" title="Añadir a oferta">
+      </td>
+      <td class="chk-col">
+        <input type="checkbox" class="chk-catalogo" ${enCatalogo ? 'checked' : ''}
+          onchange="toggleCatalogo('${escapeHtml(p._key)}',${p._idx},this.checked)" title="Añadir al catálogo">
       </td>
       <td class="codigo">${escapeHtml(p.codigo) || '—'}</td>
       <td class="descripcion">${escapeHtml(p.descripcion)}</td>
@@ -1738,6 +1775,12 @@ async function mostrarPanelYCargar(user) {
    ────────────────────────────────────────────── */
 let ofertasSeleccionadas = new Map(); // key → { idx, producto }
 const BUCKET_FOTOS = 'ofertas-fotos';
+const BUCKET_CAT   = 'catalogo-fotos';
+
+/* ──────────────────────────────────────────────
+   CATÁLOGO PÚBLICO (sin precios)
+   ────────────────────────────────────────────── */
+let catalogoSeleccionados = new Map(); // key → { idx, producto }
 
 function toggleOferta(key, idx, checked) {
   if (checked) {
@@ -1870,6 +1913,207 @@ function previsualizarFoto(input, key) {
 
 function cerrarModalOfertas() {
   document.getElementById('modal-ofertas').classList.remove('show');
+}
+
+function toggleCatalogo(key, idx, checked) {
+  if (checked) {
+    catalogoSeleccionados.set(key, { idx, producto: TODOS[idx] });
+  } else {
+    catalogoSeleccionados.delete(key);
+  }
+  actualizarBadgeCatalogo();
+  const fila = document.querySelector(`input.chk-catalogo[onchange*="'${key}'"]`)?.closest('tr');
+  if (fila) {
+    const enOferta = fila.classList.contains('en-oferta');
+    if (checked && enOferta) fila.className = 'en-oferta en-catalogo';
+    else if (checked) fila.className = 'en-catalogo';
+    else if (enOferta) fila.className = 'en-oferta';
+    else fila.className = '';
+  }
+}
+
+function actualizarBadgeCatalogo() {
+  const n = catalogoSeleccionados.size;
+  const badge = document.getElementById('cat-badge');
+  if (!badge) return;
+  badge.style.display = n > 0 ? '' : 'none';
+  badge.textContent = n;
+}
+
+async function abrirModalCatalogo() {
+  document.getElementById('modal-catalogo').classList.add('show');
+  const lista = document.getElementById('catalogo-lista');
+
+  if (catalogoSeleccionados.size > 0) {
+    lista.innerHTML = [...catalogoSeleccionados.entries()].map(([key, { producto: p }]) => `
+      <div class="oferta-item" data-key="${escapeHtml(key)}">
+        <div class="oferta-item-name">${escapeHtml(p.descripcion)}</div>
+        <div class="oferta-row">
+          <div class="oferta-field" style="flex:0;min-width:auto">
+            <label>Foto del producto</label>
+            <label class="foto-label">
+              📷 Subir foto
+              <input type="file" accept="image/*" class="foto-input-cat" data-key="${escapeHtml(key)}"
+                onchange="previsualizarFotoCat(this,'${escapeHtml(key)}')">
+            </label>
+          </div>
+          <img class="foto-preview" id="foto-cat-prev-${escapeHtml(key)}" src="" alt="">
+        </div>
+      </div>`).join('');
+    document.getElementById('btn-catalogo-confirm').style.display = '';
+  } else {
+    lista.innerHTML = '<p style="font-size:12px;color:#888;margin-bottom:1rem">Ningún producto seleccionado. Usa el checkbox 📋 en la tabla para marcar productos.</p>';
+    document.getElementById('btn-catalogo-confirm').style.display = 'none';
+  }
+
+  const actContainer = document.getElementById('catalogo-activos-container');
+  const actWrapper   = document.getElementById('catalogo-activos-lista');
+  const { data, error } = await sb.from('catalogo').select('*').eq('visible', true).order('updated_at', { ascending: false });
+  actWrapper.style.display = '';
+  if (!error && data && data.length > 0) {
+    actContainer.innerHTML = data.map(c => `
+      <div class="oferta-item" style="display:flex;justify-content:space-between;align-items:center;background:#fff;border-color:#ddd" data-cat-id="${escapeHtml(c.codigo)}">
+        <div>
+          <div class="oferta-item-name" style="margin-bottom:4px">${escapeHtml(c.nombre)}</div>
+          ${c.foto_url ? `<img src="${escapeHtml(c.foto_url)}" style="height:40px;border-radius:4px;object-fit:cover">` : '<span style="font-size:11px;color:#aaa">Sin foto</span>'}
+        </div>
+        <button class="btn btn-out btn-cat-del" style="color:#C0392B;border-color:#C0392B;padding:6px 12px;font-size:8px" onclick="eliminarDeCatalogo('${escapeHtml(c.codigo)}')">🗑️ Eliminar</button>
+      </div>`).join('');
+  } else {
+    actContainer.innerHTML = '<div style="font-size:11px;color:#888">No hay productos en el catálogo.</div>';
+  }
+
+  document.getElementById('catalogo-log').style.display = 'none';
+  document.getElementById('catalogo-log').textContent = '';
+  document.getElementById('btn-catalogo-confirm').disabled = false;
+  document.getElementById('btn-catalogo-confirm').textContent = '📋 Publicar en catálogo';
+  document.getElementById('btn-catalogo-cancel').style.display = '';
+}
+
+function previsualizarFotoCat(input, key) {
+  const file = input.files[0];
+  if (!file) return;
+  const prev = document.getElementById('foto-cat-prev-' + key);
+  prev.src = URL.createObjectURL(file);
+  prev.style.display = 'block';
+}
+
+function cerrarModalCatalogo() {
+  document.getElementById('modal-catalogo').classList.remove('show');
+}
+
+async function eliminarDeCatalogo(codigo) {
+  if (!confirm('¿Quitar este producto del catálogo público?')) return;
+  const item = document.querySelector(`[data-cat-id="${codigo}"]`);
+  const btn  = item?.querySelector('.btn-cat-del');
+  if (btn) { btn.disabled = true; btn.textContent = '...'; }
+
+  const { data: { session: sess } } = await sb.auth.getSession();
+  const res = await fetch(`${SB_URL}/rest/v1/catalogo?codigo=eq.${encodeURIComponent(codigo)}`, {
+    method: 'DELETE',
+    headers: { 'Authorization': `Bearer ${sess?.access_token}`, 'apikey': SB_KEY }
+  });
+  if (res.ok) {
+    if (item) item.remove();
+    const container = document.getElementById('catalogo-activos-container');
+    if (!container.children.length) container.innerHTML = '<div style="font-size:11px;color:#888">No hay productos en el catálogo.</div>';
+    mostrarToast('Producto eliminado del catálogo');
+  } else {
+    if (btn) { btn.disabled = false; btn.textContent = '🗑️ Eliminar'; }
+    mostrarToast('Error al eliminar');
+  }
+}
+
+async function confirmarSubirCatalogo() {
+  const btn = document.getElementById('btn-catalogo-confirm');
+  const log = document.getElementById('catalogo-log');
+  btn.disabled = true;
+  btn.textContent = 'Subiendo...';
+  log.style.display = 'block';
+  log.textContent = '';
+
+  const { data: { session: sess } } = await sb.auth.getSession();
+  if (!sess) {
+    log.textContent = 'ERROR: Debes estar autenticada para publicar en el catálogo.';
+    btn.disabled = false;
+    btn.textContent = '📋 Publicar en catálogo';
+    return;
+  }
+
+  let ok = 0, errores = 0;
+
+  for (const [key, { producto: p }] of catalogoSeleccionados.entries()) {
+    const fotoInput = document.querySelector(`.foto-input-cat[data-key="${key}"]`);
+    log.textContent += `→ ${p.descripcion.slice(0, 45)}...\n`;
+    log.scrollTop = log.scrollHeight;
+
+    let foto_url = null;
+    if (fotoInput?.files[0]) {
+      const file = fotoInput.files[0];
+      const ext  = file.name.split('.').pop().toLowerCase();
+      const path = `${key.replace(/[^a-zA-Z0-9_-]/g,'_')}_${Date.now()}.${ext}`;
+      const { error: upErr } = await sb.storage.from(BUCKET_CAT).upload(path, file, { upsert: true, contentType: file.type });
+      if (upErr) {
+        log.textContent += `  ⚠ Foto no subida: ${upErr.message}\n`;
+      } else {
+        const { data: urlData } = sb.storage.from(BUCKET_CAT).getPublicUrl(path);
+        foto_url = urlData.publicUrl;
+        log.textContent += `  ✓ Foto subida\n`;
+      }
+    }
+
+    const registro = {
+      codigo:     p.codigo || key,
+      nombre:     p.descripcion,
+      visible:    true,
+      updated_at: new Date().toISOString(),
+    };
+    if (foto_url) registro.foto_url = foto_url;
+
+    const res = await fetch(`${SB_URL}/rest/v1/catalogo?on_conflict=codigo`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${sess.access_token}`,
+        'apikey': SB_KEY,
+        'Prefer': 'resolution=merge-duplicates,return=minimal'
+      },
+      body: JSON.stringify(registro)
+    });
+
+    if (!res.ok) {
+      const errData = await res.json();
+      log.textContent += `  ✗ Error BD: ${errData.message}\n`;
+      errores++;
+    } else {
+      log.textContent += `  ✓ Publicado en catálogo\n`;
+      ok++;
+    }
+    log.scrollTop = log.scrollHeight;
+  }
+
+  log.textContent += `\nResultado: ${ok} publicados, ${errores} errores\n`;
+  if (errores === 0) mostrarToast(`${ok} producto${ok!==1?'s':''} añadidos al catálogo`);
+  else mostrarToast('Subida con algunos errores — revisa el log');
+
+  btn.textContent = 'Cerrar';
+  btn.disabled = false;
+  btn.onclick = () => { cerrarModalCatalogo(); btn.onclick = confirmarSubirCatalogo; };
+  document.getElementById('btn-catalogo-cancel').style.display = 'none';
+  log.scrollTop = log.scrollHeight;
+}
+
+async function cargarCatalogoInicial() {
+  const { data, error } = await sb.from('catalogo').select('codigo').eq('visible', true);
+  if (error || !data) return;
+  const codigos = new Set(data.map(c => c.codigo));
+  for (let i = 0; i < TODOS.length; i++) {
+    const p = TODOS[i];
+    if (codigos.has(p.codigo) || codigos.has(p._key)) {
+      catalogoSeleccionados.set(p._key, { idx: i, producto: p });
+    }
+  }
+  actualizarBadgeCatalogo();
 }
 
 async function confirmarSubirOfertas() {

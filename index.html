@@ -165,6 +165,20 @@ nav{background:var(--black);padding:0 1.5rem;height:58px;display:flex;align-item
 .brand-name{font-family:var(--head);font-size:9px;font-weight:700;color:var(--black);text-align:center;line-height:1.3}
 .brand-type{font-size:9px;color:var(--dg);text-align:center}
 
+/* CATÁLOGO */
+.catalogo-sec{background:var(--white);border-top:3px solid var(--black);border-bottom:3px solid var(--black);padding:0 0 2rem}
+.catalogo-header{background:#1A6FA8;padding:1.2rem 1.5rem}
+.catalogo-header-inner{display:flex;align-items:baseline;gap:1rem}
+.catalogo-eyebrow{font-family:var(--head);font-size:8px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:rgba(255,255,255,0.6)}
+.catalogo-title{font-family:var(--head);font-size:22px;font-weight:900;letter-spacing:-0.02em;color:var(--white)}
+.catalogo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;padding:1.5rem}
+.cat-card{background:var(--offwhite);border:2px solid #1A6FA8;border-radius:8px;overflow:hidden;transition:transform .15s,box-shadow .15s}
+.cat-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(26,111,168,0.2)}
+.cat-img{width:100%;height:140px;object-fit:cover;display:block}
+.cat-img-placeholder{width:100%;height:140px;background:#E8F4FD;display:flex;align-items:center;justify-content:center;font-size:3rem}
+.cat-body{padding:12px}
+.cat-nombre{font-family:var(--head);font-size:10px;font-weight:700;color:var(--black);line-height:1.4}
+
 /* OFERTAS */
 .ofertas-sec{background:var(--black);border-top:3px solid var(--mg);border-bottom:3px solid var(--mg);padding:0 0 2rem}
 .ofertas-header{background:var(--mg);padding:1.2rem 1.5rem}
@@ -290,15 +304,10 @@ footer p{font-family:var(--head);font-size:8px;font-weight:700;letter-spacing:0.
   .oferta-precio-orig{font-size:11px}
 
   /* CATÁLOGO */
-  .cat-sec{padding:1.4rem 1rem}
-  .cat-header{flex-wrap:wrap;gap:.5rem}
-  .tabs{gap:5px}
-  .tab{font-size:8px;padding:7px 10px}
-  .grid{grid-template-columns:repeat(2,1fr);gap:8px}
-  .card{padding:.8rem}
-  .card-ico{font-size:20px;margin-bottom:6px}
-  .card-name{font-size:10px}
-  .card-desc{font-size:10px}
+  .catalogo-grid{grid-template-columns:repeat(2,1fr);gap:8px;padding:.9rem}
+  .cat-img,.cat-img-placeholder{height:105px}
+  .cat-body{padding:9px}
+  .cat-nombre{font-size:9px}
 
   /* WA */
   .wa{padding:1rem;flex-direction:column;align-items:stretch;gap:.7rem}
@@ -349,6 +358,7 @@ footer p{font-family:var(--head);font-size:8px;font-weight:700;letter-spacing:0.
   </div>
   <ul class="navl">
     <li><a href="#ofertas" style="color:#FF9500">★ Ofertas</a></li>
+    <li><a href="#catalogo">Catálogo</a></li>
     <li><a href="#ct">Contacto</a></li>
     <li><a href="https://www.instagram.com/pinturasdeautostorres?igsh=ZDB4aDhjbmNhMzR0" target="_blank" rel="noopener" style="color:#E4405F">&#9670; Instagram</a></li>
   </ul>
@@ -428,7 +438,16 @@ footer p{font-family:var(--head);font-size:8px;font-weight:700;letter-spacing:0.
   <div class="ofertas-grid" id="ofertas-grid"></div>
 </section>
 
-
+<!-- SECCIÓN CATÁLOGO -->
+<section class="catalogo-sec" id="catalogo" style="display:none">
+  <div class="catalogo-header">
+    <div class="catalogo-header-inner">
+      <div class="catalogo-eyebrow">Productos disponibles</div>
+      <h2 class="catalogo-title">📋 CATÁLOGO</h2>
+    </div>
+  </div>
+  <div class="catalogo-grid" id="catalogo-grid"></div>
+</section>
 
 <div class="wa">
   <p>¿No encuentras lo que buscas?<span>Llámanos o escríbenos por WhatsApp</span></p>
@@ -571,8 +590,29 @@ function escHtml(s) {
   return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
+// ── CARGAR CATÁLOGO ──
+async function cargarCatalogo() {
+  const { data, error } = await sb
+    .from('catalogo')
+    .select('*')
+    .eq('visible', true)
+    .order('updated_at', { ascending: false });
+
+  const sec = document.getElementById('catalogo');
+  if (error || !data || !data.length) { sec.style.display = 'none'; return; }
+
+  sec.style.display = '';
+  document.getElementById('catalogo-grid').innerHTML = data.map(c => {
+    const foto = c.foto_url
+      ? `<img class="cat-img" src="${escHtml(c.foto_url)}" alt="${escHtml(c.nombre)}" loading="lazy">`
+      : `<div class="cat-img-placeholder">📦</div>`;
+    return `<div class="cat-card">${foto}<div class="cat-body"><div class="cat-nombre">${escHtml(c.nombre)}</div></div></div>`;
+  }).join('');
+}
+
 // Arrancar
 cargarOfertas();
+cargarCatalogo();
 
 // ── FORMULARIO → WHATSAPP ──
 function enviarWA() {
