@@ -101,19 +101,30 @@ thead th{
   position:sticky;top:0;background:var(--white);z-index:5;white-space:nowrap;
 }
 
-/* ── CHECKBOX OFERTA ── */
-.chk-oferta{width:16px;height:16px;accent-color:var(--mg);cursor:pointer}
-td.chk-col{text-align:center;padding:9px 8px}
-thead th.chk-col{text-align:center;padding:10px 8px}
+/* ── TOGGLES OFERTA / CATÁLOGO ── */
+td.chk-col{text-align:center;padding:6px 8px}
+thead th.chk-col{text-align:center;padding:8px 8px;font-size:9px;white-space:nowrap}
 tr.en-oferta{background:#FFF8E1!important}
 tr.en-oferta:hover{background:#FFF3CD!important}
 tr.en-catalogo{background:#E8F5E9!important}
 tr.en-catalogo:hover{background:#C8E6C9!important}
 tr.en-oferta.en-catalogo{background:linear-gradient(90deg,#FFF8E1 50%,#E8F5E9 50%)!important}
+
+/* Toggle base */
+.tgl{position:relative;display:inline-block;width:34px;height:19px;flex-shrink:0}
+.tgl input{opacity:0;width:0;height:0;position:absolute}
+.tgl-sl{position:absolute;inset:0;background:#ddd;border-radius:19px;transition:.2s;cursor:pointer}
+.tgl-sl:before{content:'';position:absolute;width:13px;height:13px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+/* Oferta → naranja */
+.tgl-oferta input:checked + .tgl-sl{background:#FF6B00}
+.tgl-oferta input:checked + .tgl-sl:before{transform:translateX(15px)}
+/* Catálogo → azul */
+.tgl-catalogo input:checked + .tgl-sl{background:#1A6FA8}
+.tgl-catalogo input:checked + .tgl-sl:before{transform:translateX(15px)}
+
 .btn-catalogo{background:#1A6FA8;color:var(--white)}
 .btn-catalogo:hover{background:#155A8A}
 .cat-count-badge{background:#1A6FA8;color:#fff;border-radius:10px;font-size:9px;padding:2px 7px;margin-left:4px;font-family:var(--head);font-weight:700}
-.chk-catalogo{width:16px;height:16px;accent-color:#1A6FA8;cursor:pointer}
 
 /* ── MODAL OFERTAS ── */
 .oferta-item{border:1.5px solid #e0e0e0;border-radius:8px;padding:12px;margin-bottom:10px;background:#FAFAFA}
@@ -459,8 +470,8 @@ td.stock{text-align:center;font-weight:600}
 <div class="tabla-wrap" id="tabla-wrap">
   <table>
     <thead><tr>
-      <th class="chk-col" title="Añadir a oferta">★</th>
-      <th class="chk-col" title="Añadir al catálogo">📋</th>
+      <th class="chk-col" title="Marcar como oferta"><span style="background:#FF6B00;color:#fff;padding:2px 6px;border-radius:3px;font-size:8px">★ OFERTA</span></th>
+      <th class="chk-col" title="Añadir al catálogo público"><span style="background:#1A6FA8;color:#fff;padding:2px 6px;border-radius:3px;font-size:8px">📋 CATÁLOGO</span></th>
       <th>Código</th>
       <th>Descripción</th>
       <th title="Haz clic en el badge para editar">Marca ✏</th>
@@ -1426,12 +1437,18 @@ function renderTabla(lista) {
     else if (enCatalogo) rowClass = 'en-catalogo';
     return `<tr class="${rowClass}">
       <td class="chk-col">
-        <input type="checkbox" class="chk-oferta" ${enOferta ? 'checked' : ''}
-          onchange="toggleOferta('${escapeHtml(p._key)}',${p._idx},this.checked)" title="Añadir a oferta">
+        <label class="tgl tgl-oferta" title="Añadir a oferta">
+          <input type="checkbox" class="chk-oferta" ${enOferta ? 'checked' : ''}
+            onchange="toggleOferta('${escapeHtml(p._key)}',${p._idx},this.checked)">
+          <span class="tgl-sl"></span>
+        </label>
       </td>
       <td class="chk-col">
-        <input type="checkbox" class="chk-catalogo" ${enCatalogo ? 'checked' : ''}
-          onchange="toggleCatalogo('${escapeHtml(p._key)}',${p._idx},this.checked)" title="Añadir al catálogo">
+        <label class="tgl tgl-catalogo" title="Añadir al catálogo">
+          <input type="checkbox" class="chk-catalogo" ${enCatalogo ? 'checked' : ''}
+            onchange="toggleCatalogo('${escapeHtml(p._key)}',${p._idx},this.checked)">
+          <span class="tgl-sl"></span>
+        </label>
       </td>
       <td class="codigo">${escapeHtml(p.codigo) || '—'}</td>
       <td class="descripcion">${escapeHtml(p.descripcion)}</td>
