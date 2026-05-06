@@ -505,7 +505,14 @@ footer p{font-family:var(--head);font-size:8px;font-weight:700;letter-spacing:0.
       <label>Mensaje</label>
       <textarea id="f-mensaje" placeholder="Cuéntanos qué necesitas. Si buscas un color, indícanos la referencia o el modelo del vehículo."></textarea>
     </div>
-    <button class="send-btn" onclick="enviarWA()">Enviar por WhatsApp →</button>
+    <div class="field">
+      <label>Tu correo electrónico <span style="color:#999;font-size:9px">(opcional, para que podamos responderte)</span></label>
+      <input type="email" id="f-email" placeholder="tu@correo.com">
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">
+      <button class="send-btn" style="flex:1;margin-top:0" onclick="enviarWA()">💬 Enviar por WhatsApp</button>
+      <button class="send-btn" style="flex:1;margin-top:0;background:#333" onclick="enviarEmail()">✉️ Enviar por correo</button>
+    </div>
   </div>
 </section>
 
@@ -695,6 +702,52 @@ function enviarWA() {
 
   const url = 'https://wa.me/34623404757?text=' + encodeURIComponent(texto);
   window.open(url, '_blank');
+}
+
+function enviarEmail() {
+  const nombre   = document.getElementById('f-nombre');
+  const telefono = document.getElementById('f-telefono');
+  const tipo     = document.getElementById('f-tipo');
+  const mensaje  = document.getElementById('f-mensaje');
+  const email    = document.getElementById('f-email');
+
+  let ok = true;
+  ['nombre','telefono','tipo'].forEach(id => {
+    document.getElementById('f-' + id).classList.remove('error');
+    document.getElementById('err-' + id).textContent = '';
+  });
+
+  if (!nombre.value.trim() || nombre.value.trim().length < 2) {
+    nombre.classList.add('error');
+    document.getElementById('err-nombre').textContent = 'Por favor escribe tu nombre.';
+    ok = false;
+  }
+  const telLimpio = telefono.value.replace(/[\s\-().+]/g, '');
+  if (!telefono.value.trim() || !/^\d+$/.test(telLimpio) || telLimpio.length < 9) {
+    telefono.classList.add('error');
+    document.getElementById('err-telefono').textContent = 'Escribe un teléfono válido (mín. 9 dígitos).';
+    ok = false;
+  }
+  if (!tipo.value) {
+    tipo.classList.add('error');
+    document.getElementById('err-tipo').textContent = 'Selecciona el tipo de consulta.';
+    ok = false;
+  }
+  if (!ok) {
+    const primerError = document.querySelector('.field input.error, .field select.error');
+    if (primerError) primerError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+
+  const asunto = `Consulta web: ${tipo.value} — ${nombre.value.trim()}`;
+  let cuerpo = `Hola,\n\nMe pongo en contacto desde vuestra página web.\n\n`;
+  cuerpo += `Nombre: ${nombre.value.trim()}\n`;
+  cuerpo += `Teléfono: ${telefono.value.trim()}\n`;
+  if (email.value.trim()) cuerpo += `Correo de respuesta: ${email.value.trim()}\n`;
+  cuerpo += `Consulta: ${tipo.value}\n`;
+  if (mensaje.value.trim()) cuerpo += `\nMensaje:\n${mensaje.value.trim()}`;
+
+  window.location.href = `mailto:pinturasdeautostorres@gmail.com?subject=${encodeURIComponent(asunto)}&body=${encodeURIComponent(cuerpo)}`;
 }
 </script>
 </body>
