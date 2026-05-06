@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /inventario-interno/
+
+Sitemap: https://pinturasautostorres.com/sitemap.xml
