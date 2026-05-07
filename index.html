@@ -621,7 +621,7 @@ async function cargarOfertas() {
 
   sec.style.display = '';
   grid.innerHTML = data.map(o => {
-    const foto = o.foto_url
+    const foto = o.foto_url && o.foto_url.startsWith('http')
       ? `<img class="oferta-img" src="${o.foto_url}" alt="${escHtml(o.nombre)}" loading="lazy">`
       : `<div class="oferta-img-placeholder">🏷️</div>`;
     const precioNuevo = Number(o.precio_oferta).toFixed(2).replace('.',',') + ' €';
@@ -664,7 +664,7 @@ async function cargarCatalogo() {
 
   sec.style.display = '';
   document.getElementById('catalogo-grid').innerHTML = data.map(c => {
-    const foto = c.foto_url
+    const foto = c.foto_url && c.foto_url.startsWith('http')
       ? `<img class="cat-img" src="${escHtml(c.foto_url)}" alt="${escHtml(c.nombre)}" loading="lazy">`
       : `<div class="cat-img-placeholder">📦</div>`;
     return `<div class="cat-card">${foto}<div class="cat-body"><div class="cat-nombre">${escHtml(c.nombre)}</div></div></div>`;
