@@ -196,6 +196,11 @@ nav{background:var(--black);padding:0 1.5rem;height:58px;display:flex;align-item
 .catalogo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;padding:1.5rem}
 .cat-card{background:var(--offwhite);border:2px solid #1A6FA8;border-radius:8px;overflow:hidden;transition:transform .15s,box-shadow .15s}
 .cat-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(26,111,168,0.2)}
+.cat-paginacion{display:flex;align-items:center;justify-content:center;gap:12px;padding:.5rem 1.5rem 1.5rem}
+.cat-pag-btn{background:#1A6FA8;color:#fff;border:none;border-radius:6px;padding:8px 20px;font-family:var(--head);font-size:10px;font-weight:700;letter-spacing:.05em;cursor:pointer;transition:background .15s}
+.cat-pag-btn:hover{background:#155d8f}
+.cat-pag-btn:disabled{background:#ccc;cursor:default}
+.cat-pag-info{font-family:var(--head);font-size:10px;font-weight:700;color:#1A6FA8;letter-spacing:.05em}
 .cat-img{width:100%;height:140px;object-fit:cover;display:block}
 .cat-img-placeholder{width:100%;height:140px;background:#E8F4FD;display:flex;align-items:center;justify-content:center;font-size:3rem}
 .cat-body{padding:12px}
@@ -471,6 +476,11 @@ footer p{font-family:var(--head);font-size:8px;font-weight:700;letter-spacing:0.
     </div>
   </div>
   <div class="catalogo-grid" id="catalogo-grid"></div>
+  <div class="cat-paginacion" id="cat-paginacion" style="display:none">
+    <button class="cat-pag-btn" id="cat-prev" onclick="catCambiarPagina(-1)">← Anterior</button>
+    <span class="cat-pag-info" id="cat-pag-info"></span>
+    <button class="cat-pag-btn" id="cat-next" onclick="catCambiarPagina(1)">Siguiente →</button>
+  </div>
 </section>
 
 <!-- SOBRE NOSOTROS -->
@@ -652,6 +662,37 @@ function escHtml(s) {
 }
 
 // ── CARGAR CATÁLOGO ──
+const CAT_POR_PAGINA = 18;
+let catTodos = [];
+let catPagina = 0;
+
+function catRenderPagina() {
+  const inicio = catPagina * CAT_POR_PAGINA;
+  const pagina = catTodos.slice(inicio, inicio + CAT_POR_PAGINA);
+  const totalPags = Math.ceil(catTodos.length / CAT_POR_PAGINA);
+
+  document.getElementById('catalogo-grid').innerHTML = pagina.map(c => {
+    const foto = c.foto_url && c.foto_url.startsWith('http')
+      ? `<img class="cat-img" src="${escHtml(c.foto_url)}" alt="${escHtml(c.nombre)}" loading="lazy">`
+      : `<div class="cat-img-placeholder">📦</div>`;
+    return `<div class="cat-card">${foto}<div class="cat-body"><div class="cat-nombre">${escHtml(c.nombre)}</div></div></div>`;
+  }).join('');
+
+  const paginacion = document.getElementById('cat-paginacion');
+  if (totalPags <= 1) { paginacion.style.display = 'none'; return; }
+
+  paginacion.style.display = 'flex';
+  document.getElementById('cat-pag-info').textContent = `${catPagina + 1} / ${totalPags}`;
+  document.getElementById('cat-prev').disabled = catPagina === 0;
+  document.getElementById('cat-next').disabled = catPagina >= totalPags - 1;
+}
+
+function catCambiarPagina(dir) {
+  catPagina += dir;
+  catRenderPagina();
+  document.getElementById('catalogo').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
 async function cargarCatalogo() {
   const { data, error } = await sb
     .from('catalogo')
@@ -663,12 +704,9 @@ async function cargarCatalogo() {
   if (error || !data || !data.length) { sec.style.display = 'none'; return; }
 
   sec.style.display = '';
-  document.getElementById('catalogo-grid').innerHTML = data.map(c => {
-    const foto = c.foto_url && c.foto_url.startsWith('http')
-      ? `<img class="cat-img" src="${escHtml(c.foto_url)}" alt="${escHtml(c.nombre)}" loading="lazy">`
-      : `<div class="cat-img-placeholder">📦</div>`;
-    return `<div class="cat-card">${foto}<div class="cat-body"><div class="cat-nombre">${escHtml(c.nombre)}</div></div></div>`;
-  }).join('');
+  catTodos = data;
+  catPagina = 0;
+  catRenderPagina();
 }
 
 // Arrancar
