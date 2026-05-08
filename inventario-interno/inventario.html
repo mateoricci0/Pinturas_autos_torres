@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Inventario Interno — Pinturas Autos Torres</title>
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@700;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.css">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -308,6 +309,11 @@ td.stock{text-align:center;font-weight:600}
   td.descripcion{max-width:140px}
   .popover{width:calc(100vw - 32px);left:16px!important}
 }
+/* CROP MODAL */
+#modal-crop{z-index:1100}
+.crop-wrap{background:#000;border-radius:10px;overflow:hidden;max-height:55vh;display:flex;align-items:center;justify-content:center}
+#crop-image{max-width:100%;display:block}
+.crop-hint{font-size:11px;color:#999;text-align:center;margin:10px 0 4px;line-height:1.5}
 </style>
 </head>
 <body>
@@ -503,6 +509,22 @@ td.stock{text-align:center;font-weight:600}
 </div>
 
 
+<!-- Modal Recorte de Foto -->
+<div class="modal-bg" id="modal-crop">
+  <div class="modal" style="max-width:480px">
+    <h3>✂️ Ajustar foto</h3>
+    <p style="font-size:12px;color:#666;margin-bottom:12px">Mueve y haz zoom para encuadrar el producto como quieres que se vea.</p>
+    <div class="crop-wrap">
+      <img id="crop-image" src="" alt="recorte">
+    </div>
+    <p class="crop-hint">👆 Arrastra para mover &nbsp;·&nbsp; Pellizca / rueda del ratón para zoom</p>
+    <div class="modal-actions">
+      <button class="btn btn-out" onclick="cancelarCrop()">Cancelar</button>
+      <button class="btn" style="background:#222;color:#fff" onclick="confirmarCrop()">✓ Usar esta foto</button>
+    </div>
+  </div>
+</div>
+
 <!-- Modal Ofertas -->
 <div class="modal-bg" id="modal-ofertas">
   <div class="modal" style="max-width:600px">
@@ -561,6 +583,7 @@ td.stock{text-align:center;font-weight:600}
 
 <div class="toast" id="toast"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
@@ -1920,12 +1943,65 @@ async function eliminarOferta(codigo) {
   }
 }
 
+// ── CROP ──
+let _cropperInst = null;
+let _cropCallback = null;
+
+function _abrirCrop(file, callback) {
+  _cropCallback = callback;
+  const img = document.getElementById('crop-image');
+  const oldUrl = img.src;
+  img.src = URL.createObjectURL(file);
+  document.getElementById('modal-crop').classList.add('show');
+  img.onload = () => {
+    if (oldUrl.startsWith('blob:')) URL.revokeObjectURL(oldUrl);
+    if (_cropperInst) { _cropperInst.destroy(); _cropperInst = null; }
+    _cropperInst = new Cropper(img, {
+      aspectRatio: 4 / 3,
+      viewMode: 1,
+      dragMode: 'move',
+      autoCropArea: 1,
+      restore: false,
+      guides: true,
+      center: true,
+      highlight: false,
+      cropBoxMovable: false,
+      cropBoxResizable: false,
+      toggleDragModeOnDblclick: false,
+    });
+  };
+}
+
+function cancelarCrop() {
+  if (_cropperInst) { _cropperInst.destroy(); _cropperInst = null; }
+  document.getElementById('modal-crop').classList.remove('show');
+  _cropCallback = null;
+}
+
+function confirmarCrop() {
+  if (!_cropperInst) return;
+  const btn = document.querySelector('#modal-crop .btn:last-child');
+  btn.disabled = true;
+  btn.textContent = 'Procesando...';
+  _cropperInst.getCroppedCanvas({ width: 800, height: 600, imageSmoothingQuality: 'high' })
+    .toBlob(blob => {
+      if (_cropperInst) { _cropperInst.destroy(); _cropperInst = null; }
+      document.getElementById('modal-crop').classList.remove('show');
+      btn.disabled = false;
+      btn.textContent = '✓ Usar esta foto';
+      if (_cropCallback) { _cropCallback(blob); _cropCallback = null; }
+    }, 'image/jpeg', 0.88);
+}
+
 function previsualizarFoto(input, key) {
   const file = input.files[0];
   if (!file) return;
-  const prev = document.getElementById('foto-prev-' + key);
-  prev.src = URL.createObjectURL(file);
-  prev.style.display = 'block';
+  _abrirCrop(file, blob => {
+    input._croppedBlob = blob;
+    const prev = document.getElementById('foto-prev-' + key);
+    prev.src = URL.createObjectURL(blob);
+    prev.style.display = 'block';
+  });
 }
 
 function cerrarModalOfertas() {
@@ -2010,9 +2086,12 @@ async function abrirModalCatalogo() {
 function previsualizarFotoCat(input, key) {
   const file = input.files[0];
   if (!file) return;
-  const prev = document.getElementById('foto-cat-prev-' + key);
-  prev.src = URL.createObjectURL(file);
-  prev.style.display = 'block';
+  _abrirCrop(file, blob => {
+    input._croppedBlob = blob;
+    const prev = document.getElementById('foto-cat-prev-' + key);
+    prev.src = URL.createObjectURL(blob);
+    prev.style.display = 'block';
+  });
 }
 
 function cerrarModalCatalogo() {
@@ -2065,11 +2144,10 @@ async function confirmarSubirCatalogo() {
     log.scrollTop = log.scrollHeight;
 
     let foto_url = null;
-    if (fotoInput?.files[0]) {
-      const file = fotoInput.files[0];
-      const ext  = file.name.split('.').pop().toLowerCase();
-      const path = `${key.replace(/[^a-zA-Z0-9_-]/g,'_')}_${Date.now()}.${ext}`;
-      const { error: upErr } = await sb.storage.from(BUCKET_CAT).upload(path, file, { upsert: true, contentType: file.type });
+    const fotoBlob = fotoInput?._croppedBlob || (fotoInput?.files[0] ? fotoInput.files[0] : null);
+    if (fotoBlob) {
+      const path = `${key.replace(/[^a-zA-Z0-9_-]/g,'_')}_${Date.now()}.jpg`;
+      const { error: upErr } = await sb.storage.from(BUCKET_CAT).upload(path, fotoBlob, { upsert: true, contentType: 'image/jpeg' });
       if (upErr) {
         log.textContent += `  ⚠ Foto no subida: ${upErr.message}\n`;
       } else {
@@ -2167,13 +2245,12 @@ async function confirmarSubirOfertas() {
 
     let foto_url = null;
 
-    // Subir foto si hay
-    if (fotoInput?.files[0]) {
-      const file = fotoInput.files[0];
-      const ext  = file.name.split('.').pop().toLowerCase();
-      const path = `${key.replace(/[^a-zA-Z0-9_-]/g,'_')}_${Date.now()}.${ext}`;
-      const { error: upErr } = await sb.storage.from(BUCKET_FOTOS).upload(path, file, {
-        upsert: true, contentType: file.type
+    // Subir foto si hay (usa blob recortado si existe)
+    const fotoBlob = fotoInput?._croppedBlob || (fotoInput?.files[0] ? fotoInput.files[0] : null);
+    if (fotoBlob) {
+      const path = `${key.replace(/[^a-zA-Z0-9_-]/g,'_')}_${Date.now()}.jpg`;
+      const { error: upErr } = await sb.storage.from(BUCKET_FOTOS).upload(path, fotoBlob, {
+        upsert: true, contentType: 'image/jpeg'
       });
       if (upErr) {
         log.textContent += `  ⚠ Foto no subida: ${upErr.message}\n`;
