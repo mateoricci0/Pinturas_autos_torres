@@ -193,7 +193,13 @@ nav{background:var(--black);padding:0 1.5rem;height:58px;display:flex;align-item
 .catalogo-header-inner{display:flex;align-items:baseline;gap:1rem}
 .catalogo-eyebrow{font-family:var(--head);font-size:8px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:rgba(255,255,255,0.6)}
 .catalogo-title{font-family:var(--head);font-size:22px;font-weight:900;letter-spacing:-0.02em;color:var(--white)}
-.catalogo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;padding:1.5rem}
+.cat-filtros{display:flex;gap:8px;padding:1rem 1.5rem .5rem;flex-wrap:wrap}
+.cat-filtros input{flex:1;min-width:140px;border:2px solid #ddd;border-radius:6px;padding:8px 12px;font-size:13px;font-family:var(--body);outline:none;transition:border-color .15s}
+.cat-filtros input:focus{border-color:#1A6FA8}
+.cat-filtros select{border:2px solid #ddd;border-radius:6px;padding:8px 10px;font-size:12px;font-family:var(--body);outline:none;cursor:pointer;background:#fff;transition:border-color .15s}
+.cat-filtros select:focus{border-color:#1A6FA8}
+.cat-sin-resultados{text-align:center;padding:2rem;color:#999;font-size:13px}
+.catalogo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;padding:1rem 1.5rem}
 .cat-card{background:var(--offwhite);border:2px solid #1A6FA8;border-radius:8px;overflow:hidden;transition:transform .15s,box-shadow .15s}
 .cat-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(26,111,168,0.2)}
 .cat-paginacion{display:flex;align-items:center;justify-content:center;gap:12px;padding:.5rem 1.5rem 1.5rem}
@@ -330,10 +336,15 @@ footer p{font-family:var(--head);font-size:8px;font-weight:700;letter-spacing:0.
   .oferta-precio-nuevo{font-size:14px}
   .oferta-precio-orig{font-size:11px}
 
-  /* CATÁLOGO */
-  .catalogo-grid{grid-template-columns:repeat(2,1fr);gap:8px;padding:.9rem}
-  .cat-img,.cat-img-placeholder{height:105px}
-  .cat-body{padding:9px}
+  /* CATÁLOGO — vista lista en móvil */
+  .cat-filtros{padding:.8rem 1rem .4rem;gap:6px}
+  .cat-filtros input{font-size:14px}
+  .catalogo-grid{grid-template-columns:1fr;gap:6px;padding:.8rem 1rem}
+  .cat-card{display:flex;flex-direction:row;align-items:stretch;border-radius:8px}
+  .cat-img{width:80px;height:80px;flex-shrink:0;border-radius:6px 0 0 6px}
+  .cat-img-placeholder{width:80px;height:80px;flex-shrink:0;border-radius:6px 0 0 6px;font-size:1.6rem}
+  .cat-body{padding:10px 12px;display:flex;align-items:center}
+  .cat-nombre{font-size:11px;line-height:1.4}
   .cat-nombre{font-size:9px}
 
   /* WA */
@@ -474,6 +485,11 @@ footer p{font-family:var(--head);font-size:8px;font-weight:700;letter-spacing:0.
       <div class="catalogo-eyebrow">Productos disponibles</div>
       <h2 class="catalogo-title">📋 CATÁLOGO</h2>
     </div>
+  </div>
+  <div class="cat-filtros">
+    <input type="search" id="cat-buscar" placeholder="🔍 Buscar producto..." oninput="catFiltrar()" autocomplete="off">
+    <select id="cat-sel-marca" onchange="catFiltrar()"><option value="">Todas las marcas</option></select>
+    <select id="cat-sel-tipo" onchange="catFiltrar()"><option value="">Todos los tipos</option></select>
   </div>
   <div class="catalogo-grid" id="catalogo-grid"></div>
   <div class="cat-paginacion" id="cat-paginacion" style="display:none">
@@ -664,14 +680,22 @@ function escHtml(s) {
 // ── CARGAR CATÁLOGO ──
 const CAT_POR_PAGINA = 18;
 let catTodos = [];
+let catFiltrados = [];
 let catPagina = 0;
 
 function catRenderPagina() {
   const inicio = catPagina * CAT_POR_PAGINA;
-  const pagina = catTodos.slice(inicio, inicio + CAT_POR_PAGINA);
-  const totalPags = Math.ceil(catTodos.length / CAT_POR_PAGINA);
+  const pagina = catFiltrados.slice(inicio, inicio + CAT_POR_PAGINA);
+  const totalPags = Math.ceil(catFiltrados.length / CAT_POR_PAGINA);
+  const grid = document.getElementById('catalogo-grid');
 
-  document.getElementById('catalogo-grid').innerHTML = pagina.map(c => {
+  if (!catFiltrados.length) {
+    grid.innerHTML = '<div class="cat-sin-resultados">No se encontraron productos con ese filtro.</div>';
+    document.getElementById('cat-paginacion').style.display = 'none';
+    return;
+  }
+
+  grid.innerHTML = pagina.map(c => {
     const foto = c.foto_url && c.foto_url.startsWith('http')
       ? `<img class="cat-img" src="${escHtml(c.foto_url)}" alt="${escHtml(c.nombre)}" loading="lazy">`
       : `<div class="cat-img-placeholder">📦</div>`;
@@ -680,11 +704,35 @@ function catRenderPagina() {
 
   const paginacion = document.getElementById('cat-paginacion');
   if (totalPags <= 1) { paginacion.style.display = 'none'; return; }
-
   paginacion.style.display = 'flex';
   document.getElementById('cat-pag-info').textContent = `${catPagina + 1} / ${totalPags}`;
   document.getElementById('cat-prev').disabled = catPagina === 0;
   document.getElementById('cat-next').disabled = catPagina >= totalPags - 1;
+}
+
+function catFiltrar() {
+  const buscar = document.getElementById('cat-buscar').value.toLowerCase().trim();
+  const marca  = document.getElementById('cat-sel-marca').value;
+  const tipo   = document.getElementById('cat-sel-tipo').value;
+  catFiltrados = catTodos.filter(c => {
+    if (buscar && !c.nombre.toLowerCase().includes(buscar)) return false;
+    if (marca  && c.marca !== marca) return false;
+    if (tipo   && c.tipo  !== tipo)  return false;
+    return true;
+  });
+  catPagina = 0;
+  catRenderPagina();
+}
+
+function catPoblarFiltros() {
+  const marcas = [...new Set(catTodos.map(c => c.marca).filter(Boolean))].sort();
+  const tipos  = [...new Set(catTodos.map(c => c.tipo).filter(Boolean))].sort();
+  const selM = document.getElementById('cat-sel-marca');
+  const selT = document.getElementById('cat-sel-tipo');
+  marcas.forEach(m => { const o = document.createElement('option'); o.value = m; o.textContent = m; selM.appendChild(o); });
+  tipos.forEach(t  => { const o = document.createElement('option'); o.value = t; o.textContent = t; selT.appendChild(o); });
+  selM.style.display = marcas.length ? '' : 'none';
+  selT.style.display = tipos.length  ? '' : 'none';
 }
 
 function catCambiarPagina(dir) {
@@ -705,7 +753,9 @@ async function cargarCatalogo() {
 
   sec.style.display = '';
   catTodos = data;
+  catFiltrados = data;
   catPagina = 0;
+  catPoblarFiltros();
   catRenderPagina();
 }
 

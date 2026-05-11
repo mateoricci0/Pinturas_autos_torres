@@ -2160,6 +2160,8 @@ async function confirmarSubirCatalogo() {
     const registro = {
       codigo:     p.codigo || key,
       nombre:     p.descripcion,
+      marca:      p.marca  || null,
+      tipo:       p.tipo   || null,
       visible:    true,
       updated_at: new Date().toISOString(),
     };
