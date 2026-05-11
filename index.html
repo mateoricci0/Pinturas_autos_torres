@@ -716,17 +716,19 @@ function catRenderPreview() {
 }
 
 function catExpandir() {
+  document.getElementById('catalogo-grid').style.display = 'none';
   document.getElementById('cat-ver-mas-wrap').style.display = 'none';
   document.getElementById('cat-expandido').style.display = '';
   catFiltrados = catTodos;
   catPagina = 0;
   catPoblarFiltros();
   catRenderPagina();
-  document.getElementById('cat-expandido').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  document.getElementById('catalogo').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function catColapsar() {
   document.getElementById('cat-expandido').style.display = 'none';
+  document.getElementById('catalogo-grid').style.display = '';
   document.getElementById('cat-ver-mas-wrap').style.display = catTodos.length > CAT_PREVIEW ? '' : 'none';
   document.getElementById('catalogo').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
