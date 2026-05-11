@@ -6,18 +6,11 @@
 <title>Resultados Web – Pinturas Autos Torres</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Unbounded:wght@400;700;900&family=Inter:wght@400;500;600&display=swap');
-
   * { box-sizing: border-box; margin: 0; padding: 0; }
-
-  body {
-    font-family: 'Inter', sans-serif;
-    background: #f5f5f5;
-    color: #111;
-    padding: 2rem;
-  }
+  body { font-family: 'Inter', sans-serif; background: #f0f0f0; color: #111; padding: 2rem; }
 
   .card {
-    max-width: 700px;
+    max-width: 720px;
     margin: 0 auto;
     background: #fff;
     border-radius: 20px;
@@ -26,278 +19,174 @@
   }
 
   /* HEADER */
-  .header {
-    background: #0D0D0D;
-    padding: 2rem 2.5rem;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    flex-wrap: wrap;
-  }
-  .header-left h1 {
-    font-family: 'Unbounded', sans-serif;
-    font-size: 15px;
-    font-weight: 900;
-    color: #fff;
-    letter-spacing: -0.02em;
-    line-height: 1.3;
-  }
-  .header-left p {
-    font-size: 11px;
-    color: rgba(255,255,255,0.45);
-    margin-top: 4px;
-    font-weight: 500;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-  }
-  .badge-semana {
-    background: #B5006A;
-    color: #fff;
-    font-family: 'Unbounded', sans-serif;
-    font-size: 9px;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    padding: 6px 14px;
-    border-radius: 100px;
-    white-space: nowrap;
-  }
+  .header { background: #0D0D0D; padding: 2rem 2.5rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+  .header h1 { font-family: 'Unbounded', sans-serif; font-size: 15px; font-weight: 900; color: #fff; letter-spacing: -0.02em; line-height: 1.3; }
+  .header p { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 4px; text-transform: uppercase; letter-spacing: .05em; }
+  .badge { background: #B5006A; color: #fff; font-family: 'Unbounded', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; padding: 6px 14px; border-radius: 100px; white-space: nowrap; }
 
   /* STATS PRINCIPALES */
-  .stats-row {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    border-bottom: 1px solid #f0f0f0;
-  }
-  .stat {
-    padding: 2rem 1.5rem;
-    text-align: center;
-    border-right: 1px solid #f0f0f0;
-  }
+  .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); border-bottom: 1px solid #f0f0f0; }
+  .stat { padding: 1.8rem 1.2rem; text-align: center; border-right: 1px solid #f0f0f0; }
   .stat:last-child { border-right: none; }
-  .stat-icon { font-size: 22px; margin-bottom: 8px; }
-  .stat-num {
-    font-family: 'Unbounded', sans-serif;
-    font-size: 32px;
-    font-weight: 900;
-    color: #B5006A;
-    line-height: 1;
-  }
-  .stat-label {
-    font-size: 11px;
-    color: #888;
-    margin-top: 6px;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-  }
+  .stat-icon { font-size: 20px; margin-bottom: 6px; }
+  .stat-num { font-family: 'Unbounded', sans-serif; font-size: 30px; font-weight: 900; color: #B5006A; line-height: 1; }
+  .stat-label { font-size: 10px; color: #888; margin-top: 5px; font-weight: 500; text-transform: uppercase; letter-spacing: .06em; }
+  .stat-delta { display: inline-block; margin-top: 6px; background: #e8f7ee; color: #1a7a3a; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 100px; }
 
-  /* CRECIMIENTO */
-  .growth-block {
-    background: #0D0D0D;
-    margin: 0 2rem;
-    border-radius: 14px;
-    padding: 1.5rem 2rem;
-    margin-top: 1.5rem;
-    display: flex;
-    align-items: center;
-    gap: 1.5rem;
-    flex-wrap: wrap;
-  }
-  .growth-arrow {
-    font-size: 42px;
-    line-height: 1;
-  }
-  .growth-text h3 {
-    font-family: 'Unbounded', sans-serif;
-    font-size: 13px;
-    font-weight: 900;
-    color: #fff;
-    margin-bottom: 4px;
-  }
-  .growth-text p {
-    font-size: 12px;
-    color: rgba(255,255,255,0.55);
-    line-height: 1.5;
-  }
-  .growth-text strong { color: #B5006A; }
-
-  /* SECCIONES */
-  .section {
-    padding: 1.5rem 2rem;
-    border-bottom: 1px solid #f5f5f5;
-  }
+  /* COMPARATIVA */
+  .section { padding: 1.5rem 2rem; border-bottom: 1px solid #f5f5f5; }
   .section:last-child { border-bottom: none; }
-  .section-title {
-    font-family: 'Unbounded', sans-serif;
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: #999;
-    margin-bottom: 1rem;
-  }
+  .section-title { font-family: 'Unbounded', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: #999; margin-bottom: 1.2rem; }
+
+  .comp-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 8px; align-items: center; }
+  .comp-label { font-size: 12px; color: #555; font-weight: 500; }
+  .comp-bar-wrap { position: relative; }
+  .comp-bar-bg { background: #f0f0f0; border-radius: 100px; height: 10px; }
+  .comp-bar { border-radius: 100px; height: 10px; }
+  .comp-val { font-family: 'Unbounded', sans-serif; font-size: 11px; font-weight: 700; text-align: right; }
+  .bar-s1 { background: #ddd; }
+  .bar-s2 { background: #B5006A; }
+  .val-s1 { color: #aaa; }
+  .val-s2 { color: #B5006A; }
+
+  .leyenda { display: flex; gap: 1.5rem; margin-bottom: 1rem; }
+  .ley-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #666; }
+  .ley-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+  /* GOOGLE */
+  .google-block { background: #f0faf4; border: 1.5px solid #34a853; border-radius: 12px; padding: 1.2rem 1.5rem; display: flex; gap: 1rem; align-items: flex-start; }
+  .google-icon { font-size: 28px; flex-shrink: 0; }
+  .google-text h4 { font-size: 13px; font-weight: 700; color: #1a7a3a; margin-bottom: 4px; }
+  .google-text p { font-size: 12px; color: #444; line-height: 1.6; }
+  .google-text strong { color: #1a7a3a; }
+
+  /* TENDENCIA */
+  .trend-block { background: #0D0D0D; border-radius: 14px; padding: 1.4rem 1.8rem; display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap; }
+  .trend-num { font-family: 'Unbounded', sans-serif; font-size: 42px; font-weight: 900; color: #B5006A; line-height: 1; flex-shrink: 0; }
+  .trend-text h3 { font-family: 'Unbounded', sans-serif; font-size: 12px; font-weight: 900; color: #fff; margin-bottom: 4px; }
+  .trend-text p { font-size: 12px; color: rgba(255,255,255,0.5); line-height: 1.5; }
+  .trend-text strong { color: #B5006A; }
 
   /* FUENTES */
-  .source-row {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    margin-bottom: 10px;
-  }
+  .source-row { display: flex; align-items: center; gap: 1rem; margin-bottom: 10px; }
   .source-row:last-child { margin-bottom: 0; }
   .source-icon { font-size: 18px; width: 28px; text-align: center; flex-shrink: 0; }
   .source-bar-wrap { flex: 1; }
   .source-label { font-size: 12px; font-weight: 600; color: #222; margin-bottom: 4px; }
   .source-bar-bg { background: #f0f0f0; border-radius: 100px; height: 8px; }
-  .source-bar { background: #B5006A; border-radius: 100px; height: 8px; transition: width .3s; }
+  .source-bar { border-radius: 100px; height: 8px; }
   .source-val { font-family: 'Unbounded', sans-serif; font-size: 12px; font-weight: 700; color: #111; flex-shrink: 0; }
 
-  /* GOOGLE */
-  .google-block {
-    background: #f0faf4;
-    border: 1.5px solid #34a853;
-    border-radius: 12px;
-    padding: 1.2rem 1.5rem;
-    display: flex;
-    gap: 1rem;
-    align-items: flex-start;
-  }
-  .google-icon { font-size: 28px; flex-shrink: 0; }
-  .google-text h4 { font-size: 13px; font-weight: 700; color: #1a7a3a; margin-bottom: 4px; }
-  .google-text p { font-size: 12px; color: #444; line-height: 1.5; }
-
   /* FOOTER */
-  .footer-card {
-    background: #fafafa;
-    border-top: 1px solid #f0f0f0;
-    padding: 1.2rem 2rem;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: .5rem;
-  }
-  .footer-card p { font-size: 10px; color: #bbb; }
-  .footer-card span { font-size: 10px; color: #bbb; }
+  .footer-card { background: #fafafa; border-top: 1px solid #f0f0f0; padding: 1.2rem 2rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .5rem; }
+  .footer-card p, .footer-card span { font-size: 10px; color: #bbb; }
 
   @media (max-width: 500px) {
     body { padding: 1rem; }
     .stats-row { grid-template-columns: 1fr 1fr; }
-    .stats-row .stat:nth-child(2) { border-right: none; }
-    .stats-row .stat:nth-child(3) { border-top: 1px solid #f0f0f0; grid-column: 1 / -1; border-right: none; }
-    .growth-block { margin: 0 1rem; margin-top: 1.2rem; }
-    .section { padding: 1.2rem 1.2rem; }
+    .stats-row .stat:nth-child(3) { grid-column: 1 / -1; border-right: none; border-top: 1px solid #f0f0f0; }
+    .section { padding: 1.2rem; }
     .header { padding: 1.5rem; }
-    .stat-num { font-size: 26px; }
+    .stat-num { font-size: 24px; }
+    .comp-row { grid-template-columns: 100px 1fr 40px; }
   }
 
   @media print {
-    @page {
-      size: A4;
-      margin: 0;
-    }
-    * {
-      -webkit-print-color-adjust: exact !important;
-      print-color-adjust: exact !important;
-      color-adjust: exact !important;
-    }
-    html, body {
-      width: 210mm;
-      height: 297mm;
-      background: #fff !important;
-      padding: 0;
-      margin: 0;
-    }
-    .card {
-      max-width: 100%;
-      width: 100%;
-      box-shadow: none;
-      border-radius: 0;
-      height: 297mm;
-    }
-    .growth-block {
-      margin: 0 1.5rem;
-      margin-top: 1.2rem;
-    }
-    .section { padding: 1.2rem 2rem; }
-    .stat { padding: 1.5rem 1rem; }
-    .stat-num { font-size: 28px; }
+    @page { size: A4; margin: 0; }
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    html, body { width: 210mm; background: #fff !important; padding: 0; margin: 0; }
+    .card { max-width: 100%; box-shadow: none; border-radius: 0; }
   }
 </style>
 </head>
 <body>
-
 <div class="card">
 
   <!-- HEADER -->
   <div class="header">
-    <div class="header-left">
+    <div>
       <h1>Pinturas Autos Torres<br>pinturasautostorres.com</h1>
-      <p>Informe de visitas · 30 abril – 7 mayo 2026</p>
+      <p>Informe de visitas · 4 – 11 mayo 2026</p>
     </div>
-    <div class="badge-semana">Primera semana</div>
+    <div class="badge">Segunda semana</div>
   </div>
 
   <!-- STATS -->
   <div class="stats-row">
     <div class="stat">
       <div class="stat-icon">👥</div>
-      <div class="stat-num">153</div>
+      <div class="stat-num">409</div>
       <div class="stat-label">Visitantes únicos</div>
+      <div class="stat-delta">+167%</div>
     </div>
     <div class="stat">
       <div class="stat-icon">📄</div>
-      <div class="stat-num">319</div>
+      <div class="stat-num">665</div>
       <div class="stat-label">Páginas vistas</div>
+      <div class="stat-delta">+108%</div>
     </div>
     <div class="stat">
-      <div class="stat-icon">📅</div>
-      <div class="stat-num">8</div>
-      <div class="stat-label">Días online</div>
+      <div class="stat-icon">🔍</div>
+      <div class="stat-num">26</div>
+      <div class="stat-label">Visitas de Google</div>
+      <div class="stat-delta">+136%</div>
     </div>
   </div>
 
-  <!-- CRECIMIENTO -->
-  <div class="growth-block">
-    <div class="growth-arrow">📈</div>
-    <div class="growth-text">
-      <h3>Creciendo cada día</h3>
-      <p>El primer día entró <strong>1 persona</strong>.<br>
-      El último día ya entraron <strong>41 personas en un solo día</strong>.</p>
+  <!-- COMPARATIVA -->
+  <div class="section">
+    <div class="section-title">Comparativa semana 1 vs semana 2</div>
+    <div class="leyenda">
+      <div class="ley-item"><div class="ley-dot" style="background:#ddd"></div> Semana 1 (30 abr – 7 may)</div>
+      <div class="ley-item"><div class="ley-dot" style="background:#B5006A"></div> Semana 2 (4 – 11 may)</div>
+    </div>
+
+    <div class="comp-row">
+      <div class="comp-label">Visitantes</div>
+      <div class="comp-bar-wrap">
+        <div class="comp-bar-bg"><div class="comp-bar bar-s1" style="width:37%"></div></div>
+        <div class="comp-bar-bg" style="margin-top:4px"><div class="comp-bar bar-s2" style="width:100%"></div></div>
+      </div>
+      <div>
+        <div class="comp-val val-s1">153</div>
+        <div class="comp-val val-s2">409</div>
+      </div>
+    </div>
+
+    <div class="comp-row">
+      <div class="comp-label">Pág. vistas</div>
+      <div class="comp-bar-wrap">
+        <div class="comp-bar-bg"><div class="comp-bar bar-s1" style="width:48%"></div></div>
+        <div class="comp-bar-bg" style="margin-top:4px"><div class="comp-bar bar-s2" style="width:100%"></div></div>
+      </div>
+      <div>
+        <div class="comp-val val-s1">319</div>
+        <div class="comp-val val-s2">665</div>
+      </div>
+    </div>
+
+    <div class="comp-row">
+      <div class="comp-label">Google</div>
+      <div class="comp-bar-wrap">
+        <div class="comp-bar-bg"><div class="comp-bar bar-s1" style="width:42%"></div></div>
+        <div class="comp-bar-bg" style="margin-top:4px"><div class="comp-bar bar-s2" style="width:100%"></div></div>
+      </div>
+      <div>
+        <div class="comp-val val-s1">11</div>
+        <div class="comp-val val-s2">26</div>
+      </div>
     </div>
   </div>
 
-  <!-- FUENTES -->
-  <div class="section" style="margin-top:1.5rem">
-    <div class="section-title">¿Cómo llegan a la web?</div>
-
-    <div class="source-row">
-      <div class="source-icon">🔗</div>
-      <div class="source-bar-wrap">
-        <div class="source-label">Enlace directo (WhatsApp, Instagram...)</div>
-        <div class="source-bar-bg"><div class="source-bar" style="width:93%"></div></div>
+  <!-- TENDENCIA -->
+  <div class="section">
+    <div class="section-title">Tendencia diaria</div>
+    <div class="trend-block">
+      <div class="trend-num">×2.7</div>
+      <div class="trend-text">
+        <h3>La web crece cada semana</h3>
+        <p>En solo dos semanas los visitantes se han multiplicado por <strong>2,7</strong>. El día pico de esta semana llegó a <strong>98 visitantes únicos en un solo día</strong>.</p>
       </div>
-      <div class="source-val">295</div>
-    </div>
-
-    <div class="source-row">
-      <div class="source-icon">🔍</div>
-      <div class="source-bar-wrap">
-        <div class="source-label">Google (búsqueda orgánica)</div>
-        <div class="source-bar-bg"><div class="source-bar" style="width:3.5%;background:#34a853"></div></div>
-      </div>
-      <div class="source-val" style="color:#34a853">11</div>
-    </div>
-
-    <div class="source-row">
-      <div class="source-icon">🔍</div>
-      <div class="source-bar-wrap">
-        <div class="source-label">Bing</div>
-        <div class="source-bar-bg"><div class="source-bar" style="width:0.5%;background:#999"></div></div>
-      </div>
-      <div class="source-val" style="color:#999">1</div>
     </div>
   </div>
 
@@ -305,23 +194,40 @@
   <div class="section">
     <div class="section-title">Google</div>
     <div class="google-block">
-      <div class="google-icon">🌐</div>
+      <div class="google-icon">📈</div>
       <div class="google-text">
-        <h4>La web ya aparece en Google</h4>
-        <p>En menos de una semana, <strong>11 personas encontraron la web buscando en Google</strong> sin que nadie les pasara el enlace. A medida que Google siga indexando las palabras clave configuradas <em>(pintura de coche Gran Canaria, spray carrocería sur de Gran Canaria...)</em> ese número subirá semana a semana.</p>
+        <h4>Las visitas desde Google se han doblado</h4>
+        <p>De <strong>11 visitas la primera semana</strong> a <strong>26 esta semana</strong> — y el sitio lleva menos de 15 días indexado. A medida que Google siga posicionando las palabras clave configuradas, este número seguirá subiendo semana a semana.</p>
       </div>
     </div>
   </div>
 
-  <!-- ORIGEN -->
+  <!-- FUENTES -->
   <div class="section">
-    <div class="section-title">Visitas desde España</div>
-    <div style="display:flex;align-items:center;gap:1.2rem;flex-wrap:wrap">
-      <div style="font-size:42px">🇪🇸</div>
-      <div>
-        <div style="font-family:'Unbounded',sans-serif;font-size:28px;font-weight:900;color:#B5006A">131</div>
-        <div style="font-size:12px;color:#666;margin-top:3px">visitas desde España — <strong>clientes reales de Gran Canaria</strong></div>
+    <div class="section-title">¿Cómo llegan a la web?</div>
+    <div class="source-row">
+      <div class="source-icon">🔗</div>
+      <div class="source-bar-wrap">
+        <div class="source-label">Enlace directo (WhatsApp, Instagram...)</div>
+        <div class="source-bar-bg"><div class="source-bar" style="width:90%;background:#B5006A"></div></div>
       </div>
+      <div class="source-val">520</div>
+    </div>
+    <div class="source-row">
+      <div class="source-icon">🔍</div>
+      <div class="source-bar-wrap">
+        <div class="source-label">Google</div>
+        <div class="source-bar-bg"><div class="source-bar" style="width:4.5%;background:#34a853"></div></div>
+      </div>
+      <div class="source-val" style="color:#34a853">26</div>
+    </div>
+    <div class="source-row">
+      <div class="source-icon">🔍</div>
+      <div class="source-bar-wrap">
+        <div class="source-label">Bing / otros</div>
+        <div class="source-bar-bg"><div class="source-bar" style="width:0.5%;background:#999"></div></div>
+      </div>
+      <div class="source-val" style="color:#999">2</div>
     </div>
   </div>
 
@@ -332,6 +238,5 @@
   </div>
 
 </div>
-
 </body>
 </html>
