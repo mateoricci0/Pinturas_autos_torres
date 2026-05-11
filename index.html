@@ -199,6 +199,8 @@ nav{background:var(--black);padding:0 1.5rem;height:58px;display:flex;align-item
 .cat-filtros select{border:2px solid #ddd;border-radius:6px;padding:8px 10px;font-size:12px;font-family:var(--body);outline:none;cursor:pointer;background:#fff;transition:border-color .15s}
 .cat-filtros select:focus{border-color:#1A6FA8}
 .cat-sin-resultados{text-align:center;padding:2rem;color:#999;font-size:13px}
+.cat-ver-mas-btn{width:100%;background:#1A6FA8;color:#fff;border:none;border-radius:8px;padding:13px;font-family:var(--head);font-size:10px;font-weight:700;letter-spacing:.06em;cursor:pointer;transition:background .15s}
+.cat-ver-mas-btn:hover{background:#155d8f}
 .catalogo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;padding:1rem 1.5rem}
 .cat-card{background:var(--offwhite);border:2px solid #1A6FA8;border-radius:8px;overflow:hidden;transition:transform .15s,box-shadow .15s}
 .cat-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(26,111,168,0.2)}
@@ -486,16 +488,26 @@ footer p{font-family:var(--head);font-size:8px;font-weight:700;letter-spacing:0.
       <h2 class="catalogo-title">📋 CATÁLOGO</h2>
     </div>
   </div>
-  <div class="cat-filtros">
-    <input type="search" id="cat-buscar" placeholder="🔍 Buscar producto..." oninput="catFiltrar()" autocomplete="off">
-    <select id="cat-sel-marca" onchange="catFiltrar()"><option value="">Todas las marcas</option></select>
-    <select id="cat-sel-tipo" onchange="catFiltrar()"><option value="">Todos los tipos</option></select>
-  </div>
   <div class="catalogo-grid" id="catalogo-grid"></div>
-  <div class="cat-paginacion" id="cat-paginacion" style="display:none">
-    <button class="cat-pag-btn" id="cat-prev" onclick="catCambiarPagina(-1)">← Anterior</button>
-    <span class="cat-pag-info" id="cat-pag-info"></span>
-    <button class="cat-pag-btn" id="cat-next" onclick="catCambiarPagina(1)">Siguiente →</button>
+  <div id="cat-ver-mas-wrap" style="display:none;padding:.2rem 1.5rem 1.5rem">
+    <button class="cat-ver-mas-btn" id="cat-ver-mas-btn" onclick="catExpandir()"></button>
+  </div>
+  <div id="cat-expandido" style="display:none">
+    <div class="cat-filtros">
+      <input type="search" id="cat-buscar" placeholder="🔍 Buscar producto..." oninput="catFiltrar()" autocomplete="off">
+      <select id="cat-sel-marca" onchange="catFiltrar()"><option value="">Todas las marcas</option></select>
+      <select id="cat-sel-tipo" onchange="catFiltrar()"><option value="">Todos los tipos</option></select>
+    </div>
+    <div class="catalogo-grid" id="catalogo-grid-full"></div>
+    <div class="cat-sin-resultados" id="cat-sin-res" style="display:none">No se encontraron productos.</div>
+    <div class="cat-paginacion" id="cat-paginacion" style="display:none">
+      <button class="cat-pag-btn" id="cat-prev" onclick="catCambiarPagina(-1)">← Anterior</button>
+      <span class="cat-pag-info" id="cat-pag-info"></span>
+      <button class="cat-pag-btn" id="cat-next" onclick="catCambiarPagina(1)">Siguiente →</button>
+    </div>
+    <div style="padding:.5rem 1.5rem 1.5rem;text-align:center">
+      <button class="cat-ver-mas-btn" style="background:transparent;color:#1A6FA8;border:2px solid #1A6FA8" onclick="catColapsar()">▲ Ver menos</button>
+    </div>
   </div>
 </section>
 
@@ -678,29 +690,62 @@ function escHtml(s) {
 }
 
 // ── CARGAR CATÁLOGO ──
+const CAT_PREVIEW = 4;
 const CAT_POR_PAGINA = 18;
 let catTodos = [];
 let catFiltrados = [];
 let catPagina = 0;
 
+function catCard(c) {
+  const foto = c.foto_url && c.foto_url.startsWith('http')
+    ? `<img class="cat-img" src="${escHtml(c.foto_url)}" alt="${escHtml(c.nombre)}" loading="lazy">`
+    : `<div class="cat-img-placeholder">📦</div>`;
+  return `<div class="cat-card">${foto}<div class="cat-body"><div class="cat-nombre">${escHtml(c.nombre)}</div></div></div>`;
+}
+
+function catRenderPreview() {
+  document.getElementById('catalogo-grid').innerHTML = catTodos.slice(0, CAT_PREVIEW).map(catCard).join('');
+  const wrap = document.getElementById('cat-ver-mas-wrap');
+  if (catTodos.length > CAT_PREVIEW) {
+    wrap.style.display = '';
+    document.getElementById('cat-ver-mas-btn').textContent =
+      `Ver catálogo completo (${catTodos.length} productos) →`;
+  } else {
+    wrap.style.display = 'none';
+  }
+}
+
+function catExpandir() {
+  document.getElementById('cat-ver-mas-wrap').style.display = 'none';
+  document.getElementById('cat-expandido').style.display = '';
+  catFiltrados = catTodos;
+  catPagina = 0;
+  catPoblarFiltros();
+  catRenderPagina();
+  document.getElementById('cat-expandido').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function catColapsar() {
+  document.getElementById('cat-expandido').style.display = 'none';
+  document.getElementById('cat-ver-mas-wrap').style.display = catTodos.length > CAT_PREVIEW ? '' : 'none';
+  document.getElementById('catalogo').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
 function catRenderPagina() {
   const inicio = catPagina * CAT_POR_PAGINA;
   const pagina = catFiltrados.slice(inicio, inicio + CAT_POR_PAGINA);
   const totalPags = Math.ceil(catFiltrados.length / CAT_POR_PAGINA);
-  const grid = document.getElementById('catalogo-grid');
+  const sinRes = document.getElementById('cat-sin-res');
+  const grid = document.getElementById('catalogo-grid-full');
 
   if (!catFiltrados.length) {
-    grid.innerHTML = '<div class="cat-sin-resultados">No se encontraron productos con ese filtro.</div>';
+    grid.innerHTML = '';
+    sinRes.style.display = '';
     document.getElementById('cat-paginacion').style.display = 'none';
     return;
   }
-
-  grid.innerHTML = pagina.map(c => {
-    const foto = c.foto_url && c.foto_url.startsWith('http')
-      ? `<img class="cat-img" src="${escHtml(c.foto_url)}" alt="${escHtml(c.nombre)}" loading="lazy">`
-      : `<div class="cat-img-placeholder">📦</div>`;
-    return `<div class="cat-card">${foto}<div class="cat-body"><div class="cat-nombre">${escHtml(c.nombre)}</div></div></div>`;
-  }).join('');
+  sinRes.style.display = 'none';
+  grid.innerHTML = pagina.map(catCard).join('');
 
   const paginacion = document.getElementById('cat-paginacion');
   if (totalPags <= 1) { paginacion.style.display = 'none'; return; }
@@ -729,6 +774,8 @@ function catPoblarFiltros() {
   const tipos  = [...new Set(catTodos.map(c => c.tipo).filter(Boolean))].sort();
   const selM = document.getElementById('cat-sel-marca');
   const selT = document.getElementById('cat-sel-tipo');
+  selM.innerHTML = '<option value="">Todas las marcas</option>';
+  selT.innerHTML = '<option value="">Todos los tipos</option>';
   marcas.forEach(m => { const o = document.createElement('option'); o.value = m; o.textContent = m; selM.appendChild(o); });
   tipos.forEach(t  => { const o = document.createElement('option'); o.value = t; o.textContent = t; selT.appendChild(o); });
   selM.style.display = marcas.length ? '' : 'none';
@@ -738,7 +785,7 @@ function catPoblarFiltros() {
 function catCambiarPagina(dir) {
   catPagina += dir;
   catRenderPagina();
-  document.getElementById('catalogo').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  document.getElementById('cat-expandido').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 async function cargarCatalogo() {
@@ -753,10 +800,7 @@ async function cargarCatalogo() {
 
   sec.style.display = '';
   catTodos = data;
-  catFiltrados = data;
-  catPagina = 0;
-  catPoblarFiltros();
-  catRenderPagina();
+  catRenderPreview();
 }
 
 // Arrancar
