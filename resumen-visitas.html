@@ -49,9 +49,17 @@
   .val-s1 { color: #aaa; }
   .val-s2 { color: #B5006A; }
 
-  .leyenda { display: flex; gap: 1.5rem; margin-bottom: 1rem; }
+  .leyenda { display: flex; gap: 1.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
   .ley-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #666; }
   .ley-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+  /* HISTORIA 3 SEMANAS */
+  .history-row { display: flex; gap: 10px; margin-bottom: 6px; align-items: center; }
+  .history-label { font-size: 11px; color: #666; width: 80px; flex-shrink: 0; }
+  .history-bar-wrap { flex: 1; }
+  .history-bar-bg { background: #f0f0f0; border-radius: 100px; height: 12px; }
+  .history-bar { border-radius: 100px; height: 12px; }
+  .history-val { font-family: 'Unbounded', sans-serif; font-size: 11px; font-weight: 700; text-align: right; width: 36px; flex-shrink: 0; }
 
   /* GOOGLE */
   .google-block { background: #f0faf4; border: 1.5px solid #34a853; border-radius: 12px; padding: 1.2rem 1.5rem; display: flex; gap: 1rem; align-items: flex-start; }
@@ -59,6 +67,16 @@
   .google-text h4 { font-size: 13px; font-weight: 700; color: #1a7a3a; margin-bottom: 4px; }
   .google-text p { font-size: 12px; color: #444; line-height: 1.6; }
   .google-text strong { color: #1a7a3a; }
+
+  /* ALERTA BOTS */
+  .bot-block { background: #fff8f0; border: 1.5px solid #e07000; border-radius: 12px; padding: 1.2rem 1.5rem; display: flex; gap: 1rem; align-items: flex-start; }
+  .bot-icon { font-size: 28px; flex-shrink: 0; }
+  .bot-text h4 { font-size: 13px; font-weight: 700; color: #b85000; margin-bottom: 4px; }
+  .bot-text p { font-size: 12px; color: #444; line-height: 1.6; }
+  .bot-text strong { color: #b85000; }
+  .bot-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 11px; }
+  .bot-table td { padding: 4px 6px; border-bottom: 1px solid #f0e8df; }
+  .bot-table td:last-child { text-align: right; font-family: 'Unbounded', sans-serif; font-weight: 700; color: #b85000; }
 
   /* TENDENCIA */
   .trend-block { background: #0D0D0D; border-radius: 14px; padding: 1.4rem 1.8rem; display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap; }
@@ -106,75 +124,30 @@
   <div class="header">
     <div>
       <h1>Pinturas Autos Torres<br>pinturasautostorres.com</h1>
-      <p>Informe de visitas · 4 – 11 mayo 2026</p>
+      <p>Informe de visitas · 5 – 12 mayo 2026</p>
     </div>
-    <div class="badge">Segunda semana</div>
+    <div class="badge">Tercera semana</div>
   </div>
 
   <!-- STATS -->
   <div class="stats-row">
     <div class="stat">
       <div class="stat-icon">👥</div>
-      <div class="stat-num">409</div>
+      <div class="stat-num">427</div>
       <div class="stat-label">Visitantes únicos</div>
-      <div class="stat-delta">+167%</div>
+      <div class="stat-delta">+4%</div>
     </div>
     <div class="stat">
       <div class="stat-icon">📄</div>
-      <div class="stat-num">665</div>
+      <div class="stat-num">688</div>
       <div class="stat-label">Páginas vistas</div>
-      <div class="stat-delta">+108%</div>
+      <div class="stat-delta">+3%</div>
     </div>
     <div class="stat">
       <div class="stat-icon">🔍</div>
-      <div class="stat-num">26</div>
+      <div class="stat-num">29</div>
       <div class="stat-label">Visitas de Google</div>
-      <div class="stat-delta">+136%</div>
-    </div>
-  </div>
-
-  <!-- COMPARATIVA -->
-  <div class="section">
-    <div class="section-title">Comparativa semana 1 vs semana 2</div>
-    <div class="leyenda">
-      <div class="ley-item"><div class="ley-dot" style="background:#ddd"></div> Semana 1 (30 abr – 7 may)</div>
-      <div class="ley-item"><div class="ley-dot" style="background:#B5006A"></div> Semana 2 (4 – 11 may)</div>
-    </div>
-
-    <div class="comp-row">
-      <div class="comp-label">Visitantes</div>
-      <div class="comp-bar-wrap">
-        <div class="comp-bar-bg"><div class="comp-bar bar-s1" style="width:37%"></div></div>
-        <div class="comp-bar-bg" style="margin-top:4px"><div class="comp-bar bar-s2" style="width:100%"></div></div>
-      </div>
-      <div>
-        <div class="comp-val val-s1">153</div>
-        <div class="comp-val val-s2">409</div>
-      </div>
-    </div>
-
-    <div class="comp-row">
-      <div class="comp-label">Pág. vistas</div>
-      <div class="comp-bar-wrap">
-        <div class="comp-bar-bg"><div class="comp-bar bar-s1" style="width:48%"></div></div>
-        <div class="comp-bar-bg" style="margin-top:4px"><div class="comp-bar bar-s2" style="width:100%"></div></div>
-      </div>
-      <div>
-        <div class="comp-val val-s1">319</div>
-        <div class="comp-val val-s2">665</div>
-      </div>
-    </div>
-
-    <div class="comp-row">
-      <div class="comp-label">Google</div>
-      <div class="comp-bar-wrap">
-        <div class="comp-bar-bg"><div class="comp-bar bar-s1" style="width:42%"></div></div>
-        <div class="comp-bar-bg" style="margin-top:4px"><div class="comp-bar bar-s2" style="width:100%"></div></div>
-      </div>
-      <div>
-        <div class="comp-val val-s1">11</div>
-        <div class="comp-val val-s2">26</div>
-      </div>
+      <div class="stat-delta">+12%</div>
     </div>
   </div>
 
@@ -182,10 +155,58 @@
   <div class="section">
     <div class="section-title">Tendencia diaria</div>
     <div class="trend-block">
-      <div class="trend-num">×2.7</div>
+      <div class="trend-num">≈</div>
       <div class="trend-text">
-        <h3>La web crece cada semana</h3>
-        <p>En solo dos semanas los visitantes se han multiplicado por <strong>2,7</strong>. El día pico de esta semana llegó a <strong>98 visitantes únicos en un solo día</strong>.</p>
+        <h3>La audiencia se ha estabilizado</h3>
+        <p>Tras el fuerte impulso inicial, la web mantiene un tráfico sólido y constante de <strong>~425 visitantes semanales</strong>. Es una señal positiva: el público que llegó se ha quedado.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- HISTORIA 3 SEMANAS -->
+  <div class="section">
+    <div class="section-title">Evolución — 3 semanas</div>
+    <div class="leyenda">
+      <div class="ley-item"><div class="ley-dot" style="background:#eee;border:1px solid #ddd"></div> Sem. 1 &nbsp;30 abr – 4 may</div>
+      <div class="ley-item"><div class="ley-dot" style="background:#888"></div> Sem. 2 &nbsp;4 – 11 may</div>
+      <div class="ley-item"><div class="ley-dot" style="background:#B5006A"></div> Sem. 3 &nbsp;5 – 12 may</div>
+    </div>
+
+    <div style="margin-bottom:1rem">
+      <div style="font-size:11px;color:#999;margin-bottom:8px;font-weight:600">Visitantes únicos</div>
+      <div class="history-row">
+        <div class="history-label" style="color:#bbb">Semana 1</div>
+        <div class="history-bar-wrap"><div class="history-bar-bg"><div class="history-bar" style="width:35.8%;background:#eee;border:1px solid #ddd"></div></div></div>
+        <div class="history-val" style="color:#ccc">153</div>
+      </div>
+      <div class="history-row">
+        <div class="history-label" style="color:#888">Semana 2</div>
+        <div class="history-bar-wrap"><div class="history-bar-bg"><div class="history-bar" style="width:95.8%;background:#888"></div></div></div>
+        <div class="history-val" style="color:#888">409</div>
+      </div>
+      <div class="history-row">
+        <div class="history-label" style="color:#B5006A;font-weight:700">Semana 3</div>
+        <div class="history-bar-wrap"><div class="history-bar-bg"><div class="history-bar" style="width:100%;background:#B5006A"></div></div></div>
+        <div class="history-val" style="color:#B5006A">427</div>
+      </div>
+    </div>
+
+    <div>
+      <div style="font-size:11px;color:#999;margin-bottom:8px;font-weight:600">Páginas vistas</div>
+      <div class="history-row">
+        <div class="history-label" style="color:#bbb">Semana 1</div>
+        <div class="history-bar-wrap"><div class="history-bar-bg"><div class="history-bar" style="width:46.4%;background:#eee;border:1px solid #ddd"></div></div></div>
+        <div class="history-val" style="color:#ccc">319</div>
+      </div>
+      <div class="history-row">
+        <div class="history-label" style="color:#888">Semana 2</div>
+        <div class="history-bar-wrap"><div class="history-bar-bg"><div class="history-bar" style="width:96.7%;background:#888"></div></div></div>
+        <div class="history-val" style="color:#888">665</div>
+      </div>
+      <div class="history-row">
+        <div class="history-label" style="color:#B5006A;font-weight:700">Semana 3</div>
+        <div class="history-bar-wrap"><div class="history-bar-bg"><div class="history-bar" style="width:100%;background:#B5006A"></div></div></div>
+        <div class="history-val" style="color:#B5006A">688</div>
       </div>
     </div>
   </div>
@@ -196,8 +217,27 @@
     <div class="google-block">
       <div class="google-icon">📈</div>
       <div class="google-text">
-        <h4>Las visitas desde Google se han doblado</h4>
-        <p>De <strong>11 visitas la primera semana</strong> a <strong>26 esta semana</strong> — y el sitio lleva menos de 15 días indexado. A medida que Google siga posicionando las palabras clave configuradas, este número seguirá subiendo semana a semana.</p>
+        <h4>Google sigue creciendo semana a semana</h4>
+        <p>De <strong>11 visitas (sem. 1)</strong> → <strong>26 (sem. 2)</strong> → <strong>29 esta semana</strong>. El tráfico orgánico crece de forma constante a medida que Google posiciona las palabras clave. Este número seguirá subiendo en las próximas semanas.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTS -->
+  <div class="section">
+    <div class="section-title">Actividad no deseada</div>
+    <div class="bot-block">
+      <div class="bot-icon">🤖</div>
+      <div class="bot-text">
+        <h4>Robots intentando entrar — no es un problema real</h4>
+        <p>Escáneres automáticos de todo internet buscan sitios WordPress para explotar vulnerabilidades. <strong>La web no usa WordPress</strong>, así que no hay riesgo. Pero estas peticiones consumen parte del ancho de banda incluido.</p>
+        <table class="bot-table">
+          <tr><td>/wp-admin/install.php</td><td>441</td></tr>
+          <tr><td>/wp-login.php</td><td>34</td></tr>
+          <tr><td>/xmlrpc.php y rutas similares</td><td>~170</td></tr>
+          <tr><td>/.env &nbsp;·&nbsp; /.git/config</td><td>31</td></tr>
+        </table>
+        <p style="margin-top:10px">Se puede bloquear estas rutas para que no cuenten en el plan de ancho de banda.</p>
       </div>
     </div>
   </div>
@@ -209,7 +249,7 @@
       <div class="source-icon">🔗</div>
       <div class="source-bar-wrap">
         <div class="source-label">Enlace directo (WhatsApp, Instagram...)</div>
-        <div class="source-bar-bg"><div class="source-bar" style="width:90%;background:#B5006A"></div></div>
+        <div class="source-bar-bg"><div class="source-bar" style="width:92%;background:#B5006A"></div></div>
       </div>
       <div class="source-val">520</div>
     </div>
@@ -217,15 +257,15 @@
       <div class="source-icon">🔍</div>
       <div class="source-bar-wrap">
         <div class="source-label">Google</div>
-        <div class="source-bar-bg"><div class="source-bar" style="width:4.5%;background:#34a853"></div></div>
+        <div class="source-bar-bg"><div class="source-bar" style="width:5.3%;background:#34a853"></div></div>
       </div>
-      <div class="source-val" style="color:#34a853">26</div>
+      <div class="source-val" style="color:#34a853">29</div>
     </div>
     <div class="source-row">
       <div class="source-icon">🔍</div>
       <div class="source-bar-wrap">
         <div class="source-label">Bing / otros</div>
-        <div class="source-bar-bg"><div class="source-bar" style="width:0.5%;background:#999"></div></div>
+        <div class="source-bar-bg"><div class="source-bar" style="width:0.4%;background:#999"></div></div>
       </div>
       <div class="source-val" style="color:#999">2</div>
     </div>
