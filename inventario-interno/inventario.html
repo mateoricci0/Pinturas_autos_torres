@@ -500,7 +500,8 @@ td.stock{text-align:center;font-weight:600}
   <div class="popover-desc" id="pop-desc"></div>
   <select id="pop-select"></select>
   <div class="popover-custom">
-    <input type="text" id="pop-custom" placeholder="O escribe una nueva…">
+    <input type="text" id="pop-custom" placeholder="O escribe una nueva…" list="pop-datalist" autocomplete="off">
+    <datalist id="pop-datalist"></datalist>
   </div>
   <div class="popover-btns">
     <button class="pop-cancel" onclick="cerrarPopover()">Cancelar</button>
@@ -659,13 +660,22 @@ const MARCAS_ALIAS = {
   'F&K':                'Franchi & Kim',
   'SHINEMATE':          'Shine-Mate',
   'SHINE-MATE':         'Shine-Mate',
-  'CSR':                'CRS',           // grafía incorrecta frecuente
-  'CROMAUTO':           'Kenda',         // Cromauto es la gama de Kenda
+  'CSR':                'CRS',
+  'CROMAUTO':           'Kenda',
   'KENDA CROMAUTO':     'Kenda',
   'FULL DIPP':          'Full Dip',
   'FULLDIPP':           'Full Dip',
   'FULLDIP':            'Full Dip',
+  'FULL DIP':           'Full Dip',
   'MIARCOS':            'Miarco',
+  'AIRUM':              'Airum',
+  'DISMOER':            'Dismoer',
+  'ELITSA':             'Elitsa',
+  'INDASA':             'Indasa',
+  'KENDA':              'Kenda',
+  'NOVOL':              'Novol',
+  'SAGOLA':             'Sagola',
+  'SIKKENS':            'Sikkens',
 };
 
 // Patrones para detectar marca desde la descripción (pandas: apply(detectar_marca))
@@ -1322,6 +1332,13 @@ function todasMarcas() {
 function todosTipos() {
   return [...new Set([...TIPOS_BASE, ...TODOS.map(p=>p.tipo)])].sort();
 }
+function canonizar(valor, campo) {
+  if (!valor) return valor;
+  const v = valor.trim().replace(/\s+/g,' ');
+  const lista = campo==='marca' ? todasMarcas() : todosTipos();
+  const match = lista.find(e => e.toLowerCase().replace(/\s+/g,' ') === v.toLowerCase());
+  return match || v;
+}
 
 function poblarSelects() {
   const mAct = selMarca.value, tAct = selTipo.value;
@@ -1522,13 +1539,21 @@ function abrirPopover(e, idx, campo) {
     campo === 'marca' ? 'Cambiar marca' : 'Cambiar tipo';
   document.getElementById('pop-desc').textContent = p.descripcion;
   document.getElementById('pop-custom').value = '';
+  const valoresExistentes = campo==='marca' ? todasMarcas() : todosTipos();
   const sel = document.getElementById('pop-select');
   sel.innerHTML = '';
-  (campo==='marca' ? todasMarcas() : todosTipos()).forEach(v => {
+  valoresExistentes.forEach(v => {
     const o = document.createElement('option');
     o.value = v; o.textContent = v;
     if (v === p[campo]) o.selected = true;
     sel.appendChild(o);
+  });
+  const dl = document.getElementById('pop-datalist');
+  dl.innerHTML = '';
+  valoresExistentes.forEach(v => {
+    const o = document.createElement('option');
+    o.value = v;
+    dl.appendChild(o);
   });
   const margin=12, pw=270, ph=230;
   let top=e.clientY+margin, left=e.clientX-10;
@@ -1546,8 +1571,9 @@ function cerrarPopover() {
 
 async function confirmarEdicion() {
   if (popIdx === null) return;
-  const custom   = document.getElementById('pop-custom').value.trim();
-  const nuevoVal = custom || document.getElementById('pop-select').value;
+  const custom = document.getElementById('pop-custom').value.trim();
+  const raw    = custom || document.getElementById('pop-select').value;
+  const nuevoVal = canonizar(raw, popCampo);
   const p   = TODOS[popIdx];
   const key = p._key;
 
@@ -2160,8 +2186,8 @@ async function confirmarSubirCatalogo() {
     const registro = {
       codigo:     p.codigo || key,
       nombre:     p.descripcion,
-      marca:      p.marca  || null,
-      tipo:       p.tipo   || null,
+      marca:      canonizar(p.marca, 'marca')  || null,
+      tipo:       canonizar(p.tipo,  'tipo')   || null,
       visible:    true,
       updated_at: new Date().toISOString(),
     };
