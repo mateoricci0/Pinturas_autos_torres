@@ -1881,8 +1881,11 @@ async function abrirModalOfertas() {
           <div class="oferta-item-name">${escapeHtml(p.descripcion)}</div>
           <div class="oferta-row">
             <div class="oferta-field">
-              <label>Precio original</label>
-              <div class="oferta-precio-orig">${precioOrig}</div>
+              <label>Precio original (€)</label>
+              <input type="number" class="oferta-precio-orig-input" min="0" step="0.01"
+                placeholder="${p.precio_venta > 0 ? p.precio_venta.toFixed(2) : '0.00'}"
+                value="${p.precio_venta > 0 ? p.precio_venta.toFixed(2) : ''}"
+                data-key="${escapeHtml(key)}">
             </div>
             <div class="oferta-field">
               <label>Precio oferta (€) *</label>
@@ -2258,9 +2261,11 @@ async function confirmarSubirOfertas() {
   let ok = 0, errores = 0;
 
   for (const [key, { producto: p }] of ofertasSeleccionadas.entries()) {
-    const precioInput = document.querySelector(`.oferta-precio-input[data-key="${key}"]`);
-    const fotoInput   = document.querySelector(`.foto-input[data-key="${key}"]`);
-    const precioOferta = parseFloat(precioInput?.value);
+    const precioInput    = document.querySelector(`.oferta-precio-input[data-key="${key}"]`);
+    const precioOrigInput = document.querySelector(`.oferta-precio-orig-input[data-key="${key}"]`);
+    const fotoInput      = document.querySelector(`.foto-input[data-key="${key}"]`);
+    const precioOferta   = parseFloat(precioInput?.value);
+    const precioOriginal = parseFloat(precioOrigInput?.value) || (p.precio_venta > 0 ? p.precio_venta : null);
 
     if (!precioInput || isNaN(precioOferta) || precioOferta <= 0) {
       log.textContent += `✗ ${p.descripcion.slice(0,40)}... — falta el precio de oferta\n`;
@@ -2293,7 +2298,7 @@ async function confirmarSubirOfertas() {
     const registro = {
       codigo:          p.codigo || key,
       nombre:          p.descripcion,
-      precio_original: p.precio_venta > 0 ? p.precio_venta : null,
+      precio_original: precioOriginal,
       precio_oferta:   precioOferta,
       visible:         true,
       updated_at:      new Date().toISOString(),
